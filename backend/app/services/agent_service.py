@@ -3,7 +3,6 @@ import asyncio
 import re as _re
 from typing import AsyncGenerator, Callable
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
 from app.models.conversation import Conversation, Message
 from app.services.llm import get_llm_provider
 from app.services.agent_tools import get_tools_for_state, execute_tool
