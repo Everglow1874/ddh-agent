@@ -7,13 +7,13 @@ from app.models.source_table import SourceTable, TableColumn
 
 def parse_csv(file: io.BytesIO) -> list[dict]:
     df = pd.read_csv(file)
-    required = {"column_name", "data_type"}
-    missing = required - set(df.columns.str.strip())
-    if missing:
-        raise ValueError(f"CSV missing required columns: {missing}")
     df.columns = df.columns.str.strip()
+    required = {"column_name", "data_type"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"CSV missing required columns: {', '.join(sorted(missing))}")
     rows = []
-    for i, row in df.iterrows():
+    for i, (_, row) in enumerate(df.iterrows()):
         rows.append({
             "column_name": str(row["column_name"]).strip(),
             "data_type": str(row["data_type"]).strip(),
