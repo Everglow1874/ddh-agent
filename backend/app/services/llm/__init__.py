@@ -13,4 +13,4 @@ def get_llm_provider() -> BaseLLMProvider:
     raise ValueError(f"Unknown LLM provider: {provider!r}. Must be 'claude' or 'qwen'.")
 
 
-__all__ = ["BaseLLMProvider", "LLMResponse", "ToolCall", "get_llm_provider"]
+__all__ = ["BaseLLMProvider", "LLMResponse", "ToolCall", "get_llm_provider", "ClaudeProvider", "QwenProvider"]

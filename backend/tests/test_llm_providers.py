@@ -41,3 +41,73 @@ def test_get_llm_provider_unknown_raises():
         mock_settings.llm_provider = "unknown_provider"
         with pytest.raises(ValueError, match="unknown_provider"):
             get_llm_provider()
+
+
+from app.services.llm.claude_provider import _to_anthropic_messages, _to_anthropic_tools
+from app.services.llm.qwen_provider import _to_openai_messages, _to_openai_tools
+import json
+
+
+def test_to_anthropic_messages_user():
+    msgs = [{"role": "user", "content": "hello"}]
+    result = _to_anthropic_messages(msgs)
+    assert result[0] == {"role": "user", "content": "hello"}
+
+
+def test_to_anthropic_messages_assistant():
+    msgs = [{"role": "assistant", "content": "hi"}]
+    result = _to_anthropic_messages(msgs)
+    assert result[0]["role"] == "assistant"
+    assert result[0]["content"][0]["type"] == "text"
+    assert result[0]["content"][0]["text"] == "hi"
+
+
+def test_to_anthropic_messages_tool_results_grouped():
+    msgs = [
+        {"role": "assistant_tool_use", "tool_calls": [{"id": "c1", "name": "tool_a", "input": {}}]},
+        {"role": "tool_result", "tool_call_id": "c1", "content": '{"x": 1}'},
+        {"role": "tool_result", "tool_call_id": "c2", "content": '{"y": 2}'},
+    ]
+    result = _to_anthropic_messages(msgs)
+    # tool_results should be grouped into one user message
+    assert result[-1]["role"] == "user"
+    assert len(result[-1]["content"]) == 2
+    assert result[-1]["content"][0]["type"] == "tool_result"
+    assert result[-1]["content"][1]["type"] == "tool_result"
+
+
+def test_to_anthropic_tools():
+    tools = [{"name": "my_tool", "description": "does stuff", "parameters": {"type": "object", "properties": {}}}]
+    result = _to_anthropic_tools(tools)
+    assert result[0]["name"] == "my_tool"
+    assert "input_schema" in result[0]
+    assert "parameters" not in result[0]
+
+
+def test_to_openai_messages_with_system():
+    msgs = [{"role": "user", "content": "hi"}]
+    result = _to_openai_messages(msgs, system="You are helpful.")
+    assert result[0] == {"role": "system", "content": "You are helpful."}
+    assert result[1] == {"role": "user", "content": "hi"}
+
+
+def test_to_openai_messages_tool_use():
+    msgs = [
+        {"role": "assistant_tool_use", "tool_calls": [{"id": "t1", "name": "my_tool", "input": {"x": 1}}]},
+        {"role": "tool_result", "tool_call_id": "t1", "content": '{"ok": true}'},
+    ]
+    result = _to_openai_messages(msgs, system="")
+    assert result[0]["role"] == "assistant"
+    assert result[0]["tool_calls"][0]["type"] == "function"
+    assert result[0]["tool_calls"][0]["function"]["name"] == "my_tool"
+    assert json.loads(result[0]["tool_calls"][0]["function"]["arguments"]) == {"x": 1}
+    assert result[1]["role"] == "tool"
+    assert result[1]["tool_call_id"] == "t1"
+
+
+def test_to_openai_tools():
+    tools = [{"name": "my_tool", "description": "does stuff", "parameters": {"type": "object"}}]
+    result = _to_openai_tools(tools)
+    assert result[0]["type"] == "function"
+    assert result[0]["function"]["name"] == "my_tool"
+    assert "parameters" in result[0]["function"]

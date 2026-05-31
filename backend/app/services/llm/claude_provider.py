@@ -66,7 +66,7 @@ class ClaudeProvider(BaseLLMProvider):
         tool_calls = []
         for block in response.content:
             if block.type == "text":
-                text = block.text
+                text += block.text
             elif block.type == "tool_use":
                 tool_calls.append(ToolCall(id=block.id, name=block.name, input=block.input))
         stop = "tool_use" if response.stop_reason == "tool_use" else "end_turn"
