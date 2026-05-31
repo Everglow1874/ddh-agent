@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy import BigInteger, SmallInteger, DateTime, String, Integer, JSON
 from sqlalchemy.orm import Mapped, mapped_column
@@ -13,7 +13,7 @@ class EtlJob(Base):
     target_table: Mapped[str] = mapped_column(String(128), nullable=False)
     target_schema: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     plan_md_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class EtlStep(Base):

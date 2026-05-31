@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import BigInteger, SmallInteger, DateTime, Text, String
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
@@ -11,7 +11,7 @@ class Conversation(Base):
     project_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     state: Mapped[int] = mapped_column(SmallInteger, default=1)
     # 1=gathering 2=schema_confirm 3=steps_confirm 4=generating 5=done
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class Message(Base):
@@ -21,4 +21,4 @@ class Message(Base):
     conversation_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False)  # user/assistant/tool
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
