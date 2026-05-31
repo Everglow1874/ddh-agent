@@ -22,18 +22,21 @@ def _load_from_yaml() -> Settings:
         return Settings()
     with open(config_path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
-    return Settings(
-        secret_key=cfg["app"]["secret_key"],
-        algorithm=cfg["app"]["algorithm"],
-        access_token_expire_minutes=cfg["app"]["access_token_expire_minutes"],
-        database_url=cfg["database"]["url"],
-        projects_dir=cfg.get("files", {}).get("projects_dir", "./projects"),
-        llm_provider=cfg["llm"]["provider"],
-        claude_api_key=cfg["llm"]["claude"]["api_key"],
-        claude_model=cfg["llm"]["claude"]["model"],
-        qwen_api_key=cfg["llm"]["qwen"]["api_key"],
-        qwen_model=cfg["llm"]["qwen"]["model"],
-    )
+    try:
+        return Settings(
+            secret_key=cfg["app"]["secret_key"],
+            algorithm=cfg["app"]["algorithm"],
+            access_token_expire_minutes=cfg["app"]["access_token_expire_minutes"],
+            database_url=cfg["database"]["url"],
+            projects_dir=cfg.get("files", {}).get("projects_dir", "./projects"),
+            llm_provider=cfg["llm"]["provider"],
+            claude_api_key=cfg["llm"]["claude"]["api_key"],
+            claude_model=cfg["llm"]["claude"]["model"],
+            qwen_api_key=cfg["llm"]["qwen"]["api_key"],
+            qwen_model=cfg["llm"]["qwen"]["model"],
+        )
+    except KeyError as e:
+        raise ValueError(f"config.yaml is missing required field: {e}") from e
 
 
 settings = _load_from_yaml()
