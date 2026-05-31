@@ -8,7 +8,7 @@ from app.database import Base
 class EtlJob(Base):
     __tablename__ = "etl_jobs"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
     project_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     target_table: Mapped[str] = mapped_column(String(128), nullable=False)
     target_schema: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
@@ -19,7 +19,7 @@ class EtlJob(Base):
 class EtlStep(Base):
     __tablename__ = "etl_steps"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
     job_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     step_order: Mapped[int] = mapped_column(Integer, nullable=False)
     step_name: Mapped[str] = mapped_column(String(256), nullable=False)
