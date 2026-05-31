@@ -1,0 +1,19 @@
+app:
+  secret_key: ""
+  algorithm: "HS256"
+  access_token_expire_minutes: 1440
+
+database:
+  url: "mysql+pymysql://YOUR_USER:YOUR_PASSWORD@localhost:3306/ddh_agent"
+
+llm:
+  provider: claude
+  claude:
+    api_key: ""
+    model: claude-sonnet-4-6
+  qwen:
+    api_key: ""
+    model: qwen-max
+
+files:
+  projects_dir: "./projects"
