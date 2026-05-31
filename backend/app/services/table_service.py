@@ -1,23 +1,51 @@
 import io
 from typing import Optional
-import pandas as pd
 from sqlalchemy.orm import Session
 from app.models.source_table import SourceTable, TableColumn
 
 
 def parse_csv(file: io.BytesIO) -> list[dict]:
-    df = pd.read_csv(file)
-    df.columns = df.columns.str.strip()
-    required = {"column_name", "data_type"}
-    missing = required - set(df.columns)
-    if missing:
-        raise ValueError(f"CSV missing required columns: {', '.join(sorted(missing))}")
+    """Parse a CSV with columns: column_name, data_type, comment.
+
+    data_type values like DECIMAL(18,2) may contain commas and are NOT
+    necessarily quoted in the file.  We resolve ambiguity by treating the
+    first field as column_name, the last field as comment, and everything
+    in between as data_type.  The header row is used solely to detect
+    whether the required column_name / data_type names are present.
+    """
+    text = file.read()
+    if isinstance(text, bytes):
+        text = text.decode("utf-8")
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    if not lines:
+        raise ValueError("CSV is empty")
+
+    # Parse header to validate required columns exist
+    header_parts = [h.strip() for h in lines[0].split(",")]
+    if "column_name" not in header_parts or "data_type" not in header_parts:
+        missing = sorted({"column_name", "data_type"} - set(header_parts))
+        raise ValueError(f"CSV missing required columns: {', '.join(missing)}")
+
+    has_comment = "comment" in header_parts
+
     rows = []
-    for i, (_, row) in enumerate(df.iterrows()):
+    for i, line in enumerate(lines[1:]):
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) < 2:
+            continue
+        column_name = parts[0]
+        # If there are 3+ parts AND the header has a comment column,
+        # treat the last part as comment and middle parts as data_type.
+        if has_comment and len(parts) >= 3:
+            comment_val = parts[-1] if parts[-1] else None
+            data_type = ",".join(parts[1:-1])
+        else:
+            data_type = ",".join(parts[1:])
+            comment_val = None
         rows.append({
-            "column_name": str(row["column_name"]).strip(),
-            "data_type": str(row["data_type"]).strip(),
-            "comment": str(row["comment"]).strip() if "comment" in df.columns and pd.notna(row.get("comment")) else None,
+            "column_name": column_name,
+            "data_type": data_type,
+            "comment": comment_val or None,
             "sort_order": i,
         })
     return rows
