@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Environment
+.env
+.env.*
+
+# Database
+*.db
+*.sqlite
+
+# Project outputs
+backend/projects/
+
+# Brainstorm session files
+.superpowers/
