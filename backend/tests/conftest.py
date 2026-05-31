@@ -10,14 +10,21 @@ import app.models as _models  # noqa: F401 — ensures all models are registered
 
 
 @pytest.fixture(scope="function")
-def client():
+def _engine():
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
     Base.metadata.create_all(engine)
-    Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    yield engine
+    Base.metadata.drop_all(engine)
+    engine.dispose()
+
+
+@pytest.fixture(scope="function")
+def client(_engine):
+    Session = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 
     def override_get_db():
         db = Session()
@@ -30,8 +37,18 @@ def client():
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
-    Base.metadata.drop_all(engine)
-    engine.dispose()
+
+
+@pytest.fixture
+def db_session(_engine):
+    """A session bound to the same in-memory engine the client uses,
+    so rows inserted here are visible to API requests and vice versa."""
+    Session = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+    session = Session()
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 @pytest.fixture
