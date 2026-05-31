@@ -4,7 +4,7 @@ import io
 VALID_CSV_BYTES = (
     b"column_name,data_type,comment\n"
     b"user_id,VARCHAR(64),\xe7\x94\xa8\xe6\x88\xb7ID\n"
-    b"amount,DECIMAL(18,2),\xe9\x87\x91\xe9\xa2\x9d\n"
+    b'amount,"DECIMAL(18,2)",\xe9\x87\x91\xe9\xa2\x9d\n'
 )
 
 
