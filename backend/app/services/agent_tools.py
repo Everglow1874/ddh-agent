@@ -1,4 +1,3 @@
-import json
 from typing import Callable
 from sqlalchemy.orm import Session
 from app.models.source_table import SourceTable, TableColumn
