@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, tables, projects, conversations, jobs, admin
 from app.config import settings
+from app.database import Base, engine
+import app.models  # noqa: F401 — registers all models with Base.metadata
 import logging
 
 logger = logging.getLogger(__name__)
@@ -14,6 +16,14 @@ async def lifespan(app: FastAPI):
         logger.warning(
             "WARNING: secret_key is empty. Set a strong secret_key in config.yaml before deploying to production."
         )
+    # Create any missing tables on startup. Safe to run repeatedly —
+    # create_all only issues CREATE TABLE for tables that don't exist.
+    # Wrapped defensively so a missing/unreachable DB (e.g. in CI where tests
+    # override the session with in-memory SQLite) does not crash app startup.
+    try:
+        Base.metadata.create_all(engine)
+    except Exception as exc:  # pragma: no cover
+        logger.warning("Skipping startup table creation: %s", exc)
     yield
 
 
