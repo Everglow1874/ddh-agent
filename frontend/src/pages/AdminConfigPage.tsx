@@ -35,6 +35,7 @@ export function AdminConfigPage() {
             options={[
               { label: "Claude", value: "claude" },
               { label: "Qwen", value: "qwen" },
+              { label: "DeepSeek", value: "deepseek" },
             ]}
           />
         </Form.Item>

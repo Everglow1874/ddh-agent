@@ -4,7 +4,7 @@
 
 - **后端**：FastAPI + SQLAlchemy + MySQL
 - **前端**：React 18 + Ant Design 5（晴空白主题）
-- **AI**：Claude / Qwen，通过配置文件切换
+- **AI**：Claude / Qwen / DeepSeek，通过配置文件切换
 - 设计文档：[docs/superpowers/specs/2026-05-31-ddh-agent-platform-design.md](docs/superpowers/specs/2026-05-31-ddh-agent-platform-design.md)
 
 ---
@@ -61,13 +61,16 @@ database:
   url: "mysql+pymysql://用户名:密码@localhost:3306/ddh_agent?charset=utf8mb4"
 
 llm:
-  provider: claude            # 或 qwen
+  provider: claude            # claude | qwen | deepseek
   claude:
     api_key: "sk-ant-..."     # 填入真实 Key 才能跑通 Agent 对话
     model: claude-sonnet-4-6
   qwen:
     api_key: ""
     model: qwen-max
+  deepseek:
+    api_key: ""
+    model: deepseek-chat      # 或 deepseek-v4-flash / deepseek-v4-pro
 
 files:
   projects_dir: "./projects"  # 生成的 SQL / plan.md 存放目录
