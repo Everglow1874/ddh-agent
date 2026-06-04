@@ -111,3 +111,33 @@ def test_to_openai_tools():
     assert result[0]["type"] == "function"
     assert result[0]["function"]["name"] == "my_tool"
     assert "parameters" in result[0]["function"]
+
+
+from app.services.llm import DeepSeekProvider, QwenProvider
+from app.services.llm.openai_compatible import OpenAICompatibleProvider
+
+
+def test_get_llm_provider_deepseek():
+    with patch("app.services.llm.settings") as mock_settings:
+        mock_settings.llm_provider = "deepseek"
+        mock_settings.deepseek_api_key = "test-key"
+        mock_settings.deepseek_model = "deepseek-chat"
+        provider = get_llm_provider()
+        assert isinstance(provider, DeepSeekProvider)
+        assert isinstance(provider, BaseLLMProvider)
+
+
+def test_deepseek_provider_uses_deepseek_base_url():
+    provider = DeepSeekProvider(api_key="k", model="deepseek-chat")
+    assert str(provider.client.base_url).startswith("https://api.deepseek.com")
+    assert provider.model == "deepseek-chat"
+
+
+def test_qwen_provider_uses_dashscope_base_url():
+    provider = QwenProvider(api_key="k", model="qwen-max")
+    assert "dashscope" in str(provider.client.base_url)
+
+
+def test_deepseek_and_qwen_share_openai_compatible_base():
+    assert issubclass(DeepSeekProvider, OpenAICompatibleProvider)
+    assert issubclass(QwenProvider, OpenAICompatibleProvider)

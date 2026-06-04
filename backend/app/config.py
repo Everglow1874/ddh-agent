@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     claude_model: str = "claude-sonnet-4-6"
     qwen_api_key: str = ""
     qwen_model: str = "qwen-max"
+    deepseek_api_key: str = ""
+    deepseek_model: str = "deepseek-chat"
 
 
 def _load_from_yaml() -> Settings:
@@ -34,6 +36,8 @@ def _load_from_yaml() -> Settings:
             claude_model=cfg["llm"]["claude"]["model"],
             qwen_api_key=cfg["llm"]["qwen"]["api_key"],
             qwen_model=cfg["llm"]["qwen"]["model"],
+            deepseek_api_key=cfg["llm"].get("deepseek", {}).get("api_key", ""),
+            deepseek_model=cfg["llm"].get("deepseek", {}).get("model", "deepseek-chat"),
         )
     except KeyError as e:
         raise ValueError(f"config.yaml is missing required field: {e}") from e

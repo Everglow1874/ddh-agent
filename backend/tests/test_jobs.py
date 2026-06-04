@@ -103,3 +103,12 @@ def test_admin_update_config_invalid_provider(client, auth_headers):
                       json={"provider": "invalid", "model": "x"},
                       headers=auth_headers)
     assert resp.status_code == 400
+
+
+def test_admin_update_config_deepseek(client, auth_headers):
+    resp = client.put("/api/admin/config",
+                      json={"provider": "deepseek", "model": "deepseek-chat"},
+                      headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json()["provider"] == "deepseek"
+    assert resp.json()["model"] == "deepseek-chat"
