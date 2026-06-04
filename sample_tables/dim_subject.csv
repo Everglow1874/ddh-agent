@@ -1,0 +1,6 @@
+column_name,data_type,comment
+subject_id,VARCHAR(10),科目ID（主键）
+subject_name,VARCHAR(20),科目名称（语文/数学/英语）
+full_score,INT,该科目满分
+pass_score,INT,及格分数线
+excellent_score,INT,优秀分数线

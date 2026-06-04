@@ -1,0 +1,9 @@
+column_name,data_type,comment
+score_id,BIGINT,成绩记录ID（主键）
+student_id,VARCHAR(20),学号（关联 dim_student）
+class_id,VARCHAR(20),班级ID（关联 dim_class，冗余便于统计）
+subject_id,VARCHAR(10),科目ID（关联 dim_subject）
+exam_id,VARCHAR(20),考试ID（关联 dim_exam）
+score,"DECIMAL(5,1)",考试得分
+is_absent,SMALLINT,是否缺考（0=正常 1=缺考）
+create_time,TIMESTAMP,成绩录入时间

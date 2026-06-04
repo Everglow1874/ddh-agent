@@ -1,0 +1,6 @@
+column_name,data_type,comment
+class_id,VARCHAR(20),班级ID（主键）
+class_name,VARCHAR(50),班级名称（如：高一3班）
+grade,VARCHAR(20),年级（如：高一）
+head_teacher,VARCHAR(50),班主任姓名
+student_count,INT,班级人数

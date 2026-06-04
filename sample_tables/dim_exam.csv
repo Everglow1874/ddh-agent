@@ -1,0 +1,6 @@
+column_name,data_type,comment
+exam_id,VARCHAR(20),考试ID（主键）
+exam_name,VARCHAR(100),考试名称（如：2026春季期中考试）
+exam_type,VARCHAR(20),考试类型（月考/期中/期末）
+exam_date,DATE,考试日期
+term,VARCHAR(20),学期（如：2025-2026-2）

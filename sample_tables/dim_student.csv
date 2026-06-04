@@ -1,0 +1,6 @@
+column_name,data_type,comment
+student_id,VARCHAR(20),学号（主键）
+student_name,VARCHAR(50),学生姓名
+class_id,VARCHAR(20),所属班级ID
+gender,VARCHAR(4),性别（男/女）
+enroll_year,INT,入学年份
