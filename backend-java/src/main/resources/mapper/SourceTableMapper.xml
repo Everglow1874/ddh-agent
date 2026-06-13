@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ddh.agent.infrastructure.persistence.mapper.SourceTableMapper">
+
+    <resultMap id="TableWithColumnsMap"
+               type="com.ddh.agent.domain.model.table.TableWithColumns">
+        <id     property="id"          column="t_id"/>
+        <result property="name"        column="t_name"/>
+        <result property="description" column="t_description"/>
+        <result property="scope"       column="t_scope"/>
+        <result property="ownerId"     column="t_owner_id"/>
+        <collection property="columns"
+                    ofType="com.ddh.agent.domain.model.table.TableColumn">
+            <id     property="id"         column="c_id"/>
+            <result property="tableId"    column="c_table_id"/>
+            <result property="columnName" column="c_column_name"/>
+            <result property="dataType"   column="c_data_type"/>
+            <result property="comment"    column="c_comment"/>
+            <result property="sortOrder"  column="c_sort_order"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectWithColumnsByProjectId"
+            parameterType="long"
+            resultMap="TableWithColumnsMap">
+        SELECT t.id          AS t_id,
+               t.name        AS t_name,
+               t.description AS t_description,
+               t.scope       AS t_scope,
+               t.owner_id    AS t_owner_id,
+               c.id          AS c_id,
+               c.table_id    AS c_table_id,
+               c.column_name AS c_column_name,
+               c.data_type   AS c_data_type,
+               c.comment     AS c_comment,
+               c.sort_order  AS c_sort_order
+        FROM   source_tables t
+        JOIN   project_tables pt ON pt.table_id = t.id
+        LEFT JOIN table_columns c ON c.table_id = t.id
+        WHERE  pt.project_id = #{projectId}
+        ORDER  BY t.id, c.sort_order
+    </select>
+
+    <select id="selectWithColumnsByConversationId"
+            parameterType="long"
+            resultMap="TableWithColumnsMap">
+        SELECT t.id          AS t_id,
+               t.name        AS t_name,
+               t.description AS t_description,
+               t.scope       AS t_scope,
+               t.owner_id    AS t_owner_id,
+               c.id          AS c_id,
+               c.table_id    AS c_table_id,
+               c.column_name AS c_column_name,
+               c.data_type   AS c_data_type,
+               c.comment     AS c_comment,
+               c.sort_order  AS c_sort_order
+        FROM   source_tables t
+        JOIN   conversation_tables ct ON ct.table_id = t.id
+        LEFT JOIN table_columns c ON c.table_id = t.id
+        WHERE  ct.conversation_id = #{conversationId}
+        ORDER  BY t.id, c.sort_order
+    </select>
+
+</mapper>
