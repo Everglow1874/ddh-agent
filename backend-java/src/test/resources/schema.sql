@@ -11,8 +11,8 @@ DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
     id         BIGINT AUTO_INCREMENT PRIMARY KEY,
-    username   VARCHAR(64)  NOT NULL,
-    email      VARCHAR(128) NOT NULL,
+    username   VARCHAR(64)  NOT NULL UNIQUE,
+    email      VARCHAR(128) NOT NULL UNIQUE,
     password_hash VARCHAR(256) NOT NULL,
     role       SMALLINT DEFAULT 2,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
