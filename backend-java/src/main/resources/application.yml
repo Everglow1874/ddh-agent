@@ -1,0 +1,41 @@
+server:
+  port: 8000
+
+app:
+  secret-key: "change-me-in-production-use-32plus-chars"
+  token-expire-minutes: 1440
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/ddh_agent?useSSL=false&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: ""
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+
+llm:
+  provider: claude
+  claude:
+    api-key: ""
+    model: claude-sonnet-4-6
+  deepseek:
+    api-key: ""
+    model: deepseek-chat
+  qwen:
+    api-key: ""
+    model: qwen-max
+
+files:
+  projects-dir: ./projects
+
+logging:
+  level:
+    com.ddh.agent: DEBUG

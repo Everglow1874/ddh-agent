@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+
+app:
+  secret-key: "test-secret-key-at-least-32-characters!!"
+  token-expire-minutes: 60
+
+llm:
+  provider: claude
+  claude:
+    api-key: "test-key"
+    model: claude-sonnet-4-6
+
+files:
+  projects-dir: ./test-projects
