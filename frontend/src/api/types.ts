@@ -46,6 +46,14 @@ export interface Conversation {
   project_id: number;
   state: number; // 1..5
   created_at: string;
+  table_ids: number[];
+}
+
+export interface TableDetailOut {
+  id: number;
+  name: string;
+  description: string | null;
+  columns: TableColumn[];
 }
 
 export interface Message {

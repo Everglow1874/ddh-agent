@@ -1,5 +1,5 @@
 import { client } from "./client";
-import type { Project } from "./types";
+import type { Project, TableDetailOut } from "./types";
 
 export async function listProjects(): Promise<Project[]> {
   const resp = await client.get<Project[]>("/projects");
@@ -35,4 +35,9 @@ export async function associateTables(projectId: number, tableIds: number[]): Pr
 
 export async function removeTableFromProject(projectId: number, tableId: number): Promise<void> {
   await client.delete(`/projects/${projectId}/tables/${tableId}`);
+}
+
+export async function getProjectTablesWithDetails(projectId: number): Promise<TableDetailOut[]> {
+  const resp = await client.get<TableDetailOut[]>(`/projects/${projectId}/tables-with-details`);
+  return resp.data;
 }
