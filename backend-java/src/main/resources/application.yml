@@ -9,8 +9,13 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/ddh_agent?useSSL=false&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: ""
+    password:
     driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      # 非内嵌数据库(MySQL)必须设为 always 才会执行 schema.sql；脚本为 CREATE TABLE IF NOT EXISTS，幂等安全
+      mode: always
+      schema-locations: classpath:schema.sql
   jackson:
     property-naming-strategy: SNAKE_CASE
 
@@ -22,13 +27,13 @@ mybatis-plus:
     banner: false
 
 llm:
-  provider: claude
+  provider: deepseek
   claude:
     api-key: ""
     model: claude-sonnet-4-6
   deepseek:
     api-key: ""
-    model: deepseek-chat
+    model: deepseek-v4-pro
   qwen:
     api-key: ""
     model: qwen-max
