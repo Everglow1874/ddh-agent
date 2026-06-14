@@ -78,10 +78,11 @@ export function ChatPage() {
       cid,
       (event: SSEEvent) => {
         switch (event.type) {
-          case "token":
+          case "token": {
+            const wasOpen = bubbleOpen;
             setBubbles((prev) => {
               const next = [...prev];
-              if (bubbleOpen && next.length && next[next.length - 1].role === "assistant") {
+              if (wasOpen && next.length && next[next.length - 1].role === "assistant") {
                 next[next.length - 1] = {
                   role: "assistant",
                   content: next[next.length - 1].content + event.text,
@@ -93,6 +94,7 @@ export function ChatPage() {
             });
             bubbleOpen = true;
             break;
+          }
           case "turn_end":
             bubbleOpen = false;
             break;
