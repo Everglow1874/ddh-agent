@@ -78,11 +78,11 @@ public class AgentDomainService {
 
         // Tool-use loop
         while (true) {
-            LlmPort.LlmResponse response = llmPort.chatWithTools(messages, tools, system);
+            LlmPort.LlmResponse response = llmPort.chatWithToolsStream(
+                messages, tools, system,
+                delta -> emit.accept(map("type", "token", "text", delta)));
 
-            if (response.text != null && !response.text.isEmpty()) {
-                emit.accept(map("type", "token", "text", response.text));
-            }
+            emit.accept(map("type", "turn_end"));
 
             if ("end_turn".equals(response.stopReason)) {
                 if (response.text != null && !response.text.isEmpty()) {

@@ -24,4 +24,12 @@ public class DynamicLlmPort implements LlmPort {
                                      String systemPrompt) {
         return delegate.get().chatWithTools(messages, tools, systemPrompt);
     }
+
+    @Override
+    public LlmResponse chatWithToolsStream(List<Map<String, Object>> messages,
+                                           List<Map<String, Object>> tools,
+                                           String systemPrompt,
+                                           java.util.function.Consumer<String> onTextDelta) {
+        return delegate.get().chatWithToolsStream(messages, tools, systemPrompt, onTextDelta);
+    }
 }

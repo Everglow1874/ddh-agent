@@ -9,6 +9,15 @@ public interface LlmPort {
                               List<Map<String, Object>> tools,
                               String systemPrompt);
 
+    default LlmResponse chatWithToolsStream(List<Map<String, Object>> messages,
+                                            List<Map<String, Object>> tools,
+                                            String systemPrompt,
+                                            java.util.function.Consumer<String> onTextDelta) {
+        LlmResponse r = chatWithTools(messages, tools, systemPrompt);
+        if (r.text != null && !r.text.isEmpty()) onTextDelta.accept(r.text);
+        return r;
+    }
+
     class LlmResponse {
         public final String text;
         public final String stopReason;

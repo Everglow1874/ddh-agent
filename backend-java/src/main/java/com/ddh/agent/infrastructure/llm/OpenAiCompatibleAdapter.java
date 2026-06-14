@@ -33,29 +33,7 @@ public abstract class OpenAiCompatibleAdapter implements LlmPort {
                                      List<Map<String, Object>> tools,
                                      String systemPrompt) {
         try {
-            ObjectNode body = mapper.createObjectNode();
-            body.put("model", model);
-
-            ArrayNode msgs = body.putArray("messages");
-            if (systemPrompt != null && !systemPrompt.isEmpty()) {
-                ObjectNode sys = msgs.addObject();
-                sys.put("role", "system");
-                sys.put("content", systemPrompt);
-            }
-            for (Map<String, Object> m : messages) {
-                msgs.add(toOpenAiMessage(m));
-            }
-            if (tools != null && !tools.isEmpty()) {
-                ArrayNode toolsNode = body.putArray("tools");
-                for (Map<String, Object> t : tools) {
-                    ObjectNode tool = toolsNode.addObject();
-                    tool.put("type", "function");
-                    ObjectNode fn = tool.putObject("function");
-                    fn.put("name", (String) t.get("name"));
-                    fn.put("description", (String) t.get("description"));
-                    fn.set("parameters", mapper.valueToTree(t.get("parameters")));
-                }
-            }
+            ObjectNode body = buildRequestBody(messages, tools, systemPrompt);
 
             Request request = new Request.Builder()
                 .url(apiUrl)
@@ -125,5 +103,116 @@ public abstract class OpenAiCompatibleAdapter implements LlmPort {
             toolCalls.add(new ToolCall(id, name, input));
         }
         return new LlmResponse(text, stopReason, toolCalls);
+    }
+
+    protected ObjectNode buildRequestBody(List<Map<String, Object>> messages,
+                                          List<Map<String, Object>> tools,
+                                          String systemPrompt) {
+        ObjectNode body = mapper.createObjectNode();
+        body.put("model", model);
+        ArrayNode msgs = body.putArray("messages");
+        if (systemPrompt != null && !systemPrompt.isEmpty()) {
+            ObjectNode sys = msgs.addObject();
+            sys.put("role", "system");
+            sys.put("content", systemPrompt);
+        }
+        for (Map<String, Object> m : messages) {
+            msgs.add(toOpenAiMessage(m));
+        }
+        if (tools != null && !tools.isEmpty()) {
+            ArrayNode toolsNode = body.putArray("tools");
+            for (Map<String, Object> t : tools) {
+                ObjectNode tool = toolsNode.addObject();
+                tool.put("type", "function");
+                ObjectNode fn = tool.putObject("function");
+                fn.put("name", (String) t.get("name"));
+                fn.put("description", (String) t.get("description"));
+                fn.set("parameters", mapper.valueToTree(t.get("parameters")));
+            }
+        }
+        return body;
+    }
+
+    @Override
+    public LlmResponse chatWithToolsStream(List<Map<String, Object>> messages,
+                                           List<Map<String, Object>> tools,
+                                           String systemPrompt,
+                                           java.util.function.Consumer<String> onTextDelta) {
+        try {
+            ObjectNode body = buildRequestBody(messages, tools, systemPrompt);
+            body.put("stream", true);
+            Request request = new Request.Builder()
+                .url(apiUrl)
+                .post(RequestBody.create(mapper.writeValueAsString(body), JSON))
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json")
+                .build();
+            try (Response response = client.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    String rb = response.body() != null ? response.body().string() : "";
+                    throw new RuntimeException(apiUrl + " error " + response.code() + ": " + rb);
+                }
+                okio.BufferedSource source = response.body().source();
+                List<String> lines = new ArrayList<>();
+                String line;
+                while ((line = source.readUtf8Line()) != null) {
+                    lines.add(line);
+                }
+                return consumeStream(lines, onTextDelta);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("LLM streaming call failed: " + apiUrl, e);
+        }
+    }
+
+    /** 解析 OpenAI 兼容流式 data: 行序列（包级可见，便于单测）。 */
+    @SuppressWarnings("unchecked")
+    LlmResponse consumeStream(List<String> lines, java.util.function.Consumer<String> onTextDelta) {
+        StringBuilder fullText = new StringBuilder();
+        java.util.Map<Integer, ToolCallBuilder> toolBuilders = new java.util.LinkedHashMap<>();
+        String finishReason = "stop";
+        for (String raw : lines) {
+            if (raw == null || !raw.startsWith("data:")) continue;
+            String data = raw.substring("data:".length()).trim();
+            if (data.isEmpty() || "[DONE]".equals(data)) continue;
+            JsonNode root;
+            try { root = mapper.readTree(data); } catch (Exception e) { continue; }
+            JsonNode choice = root.path("choices").path(0);
+            JsonNode delta = choice.path("delta");
+            JsonNode contentNode = delta.path("content");
+            if (contentNode.isTextual()) {
+                String piece = contentNode.asText();
+                if (!piece.isEmpty()) {
+                    fullText.append(piece);
+                    onTextDelta.accept(piece);
+                }
+            }
+            for (JsonNode tc : delta.path("tool_calls")) {
+                int idx = tc.path("index").asInt(0);
+                ToolCallBuilder b = toolBuilders.computeIfAbsent(idx, k -> new ToolCallBuilder());
+                if (tc.hasNonNull("id")) b.id = tc.path("id").asText();
+                JsonNode fn = tc.path("function");
+                if (fn.hasNonNull("name")) b.name = fn.path("name").asText();
+                if (fn.hasNonNull("arguments")) b.args.append(fn.path("arguments").asText());
+            }
+            String fr = choice.path("finish_reason").asText("");
+            if (!fr.isEmpty() && !"null".equals(fr)) finishReason = fr;
+        }
+        String stopReason = "tool_calls".equals(finishReason) ? "tool_use" : "end_turn";
+        List<ToolCall> toolCalls = new ArrayList<>();
+        for (ToolCallBuilder b : toolBuilders.values()) {
+            Map<String, Object> input;
+            try {
+                input = b.args.length() > 0
+                    ? mapper.readValue(b.args.toString(), Map.class) : new HashMap<>();
+            } catch (Exception e) { input = new HashMap<>(); }
+            toolCalls.add(new ToolCall(b.id, b.name, input));
+        }
+        String text = fullText.length() > 0 ? fullText.toString() : null;
+        return new LlmResponse(text, stopReason, toolCalls);
+    }
+
+    private static class ToolCallBuilder {
+        String id; String name; StringBuilder args = new StringBuilder();
     }
 }
