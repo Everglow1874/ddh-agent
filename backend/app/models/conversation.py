@@ -22,3 +22,11 @@ class Message(Base):
     role: Mapped[str] = mapped_column(String(20), nullable=False)  # user/assistant/tool
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ConversationTable(Base):
+    __tablename__ = "conversation_tables"
+
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    table_id: Mapped[int] = mapped_column(BigInteger, nullable=False)

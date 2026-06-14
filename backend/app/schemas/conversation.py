@@ -8,6 +8,7 @@ class ConversationOut(BaseModel):
     project_id: int
     state: int
     created_at: datetime
+    table_ids: list[int] = []
 
     model_config = {"from_attributes": True}
 
@@ -26,6 +27,10 @@ class ChatIn(BaseModel):
     message: str
 
 
+class CreateConversationIn(BaseModel):
+    table_ids: list[int] = []
+
+
 class ConfirmSchemaIn(BaseModel):
     target_table: str
     columns: list[dict[str, Any]]
@@ -33,3 +38,7 @@ class ConfirmSchemaIn(BaseModel):
 
 class ConfirmStepsIn(BaseModel):
     steps: list[dict[str, Any]]
+
+
+class SetConversationTablesIn(BaseModel):
+    table_ids: list[int]
