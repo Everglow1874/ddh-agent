@@ -1,11 +1,17 @@
 package com.ddh.agent.domain.service;
 
-import com.ddh.agent.domain.model.conversation.*;
-import com.ddh.agent.domain.model.table.*;
+import com.ddh.agent.domain.model.conversation.Conversation;
+import com.ddh.agent.domain.model.conversation.ConversationRepository;
+import com.ddh.agent.domain.model.conversation.ConversationTable;
+import com.ddh.agent.domain.model.conversation.Message;
+import com.ddh.agent.domain.model.table.SourceTable;
+import com.ddh.agent.domain.model.table.SourceTableRepository;
+import com.ddh.agent.domain.model.table.TableColumn;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
@@ -14,33 +20,41 @@ import java.util.stream.Collectors;
 @Service
 public class AgentDomainService {
 
-    @Autowired private LlmPort llmPort;
-    @Autowired private ConversationRepository conversationRepository;
-    @Autowired private SourceTableRepository sourceTableRepository;
-    @Autowired private EtlDomainService etlDomainService;
+    @Autowired
+    private LlmPort llmPort;
+    @Autowired
+    private ConversationRepository conversationRepository;
+    @Autowired
+    private SourceTableRepository sourceTableRepository;
+    @Autowired
+    private EtlDomainService etlDomainService;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
     // ── 工具定义（对应 Python AGENT_TOOLS）────────────────────────────────────
 
     private static final List<Map<String, Object>> ALL_TOOLS = Arrays.asList(
-        tool("list_project_tables", "Get all source tables selected for this conversation.",
-            noParams()),
-        tool("get_table_schema", "Get column definitions (name, type, comment) for a source table.",
-            paramsSingle("table_id", "integer", "The table ID")),
-        tool("propose_schema",
-            "Propose the target table structure to the user for confirmation. " +
-            "Call this when you have determined the output table columns from the requirements.",
-            paramsForProposeSchema()),
-        tool("propose_etl_steps",
-            "Propose the ETL execution plan to the user for confirmation. " +
-            "Call this after schema has been confirmed.",
-            paramsForProposeEtlSteps()),
-        tool("generate_sql", "Generate GaussDB SQL for one ETL step. Call once per confirmed step.",
-            paramsForGenerateSql())
+            tool("list_project_tables", "Get all source tables selected for this conversation.",
+                    noParams()),
+            tool("get_table_schema", "Get column definitions (name, type, comment) for a source table.",
+                    paramsSingle("table_id", "integer", "The table ID")),
+            tool("propose_schema",
+                    "Propose the target table structure to the user for confirmation. " +
+                            "Call this when you have determined the output table columns from the requirements.",
+                    paramsForProposeSchema()),
+            tool("propose_etl_steps",
+                    "Propose the ETL execution plan to the user for confirmation. " +
+                            "Call this after schema has been confirmed.",
+                    paramsForProposeEtlSteps()),
+            tool("generate_sql",
+                    "Generate GaussDB SQL for one ETL step. The SQL must be complete and executable, " +
+                            "including any required DDL: CREATE TABLE for the target-table step, " +
+                            "CREATE TEMPORARY TABLE for steps where is_temp_table=true.",
+                    paramsForGenerateSql())
     );
 
     private static final Map<Integer, List<String>> TOOLS_BY_STATE = new HashMap<>();
+
     static {
         TOOLS_BY_STATE.put(1, Arrays.asList("list_project_tables", "get_table_schema", "propose_schema"));
         TOOLS_BY_STATE.put(3, Collections.singletonList("propose_etl_steps"));
@@ -56,7 +70,7 @@ public class AgentDomainService {
     public List<Map<String, Object>> run(Long conversationId,
                                          Consumer<Map<String, Object>> emit) {
         Conversation conv = conversationRepository.findById(conversationId)
-            .orElseThrow(() -> new RuntimeException("Conversation not found: " + conversationId));
+                .orElseThrow(() -> new RuntimeException("Conversation not found: " + conversationId));
 
         int state = conv.getState();
         if (state == 5) {
@@ -79,8 +93,8 @@ public class AgentDomainService {
         // Tool-use loop
         while (true) {
             LlmPort.LlmResponse response = llmPort.chatWithToolsStream(
-                messages, tools, system,
-                delta -> emit.accept(map("type", "token", "text", delta)));
+                    messages, tools, system,
+                    delta -> emit.accept(map("type", "token", "text", delta)));
 
             emit.accept(map("type", "turn_end"));
 
@@ -95,10 +109,10 @@ public class AgentDomainService {
 
             for (LlmPort.ToolCall toolCall : response.toolCalls) {
                 Map<String, Object> result = executeTool(
-                    toolCall.name, toolCall.input, conv, emit);
+                        toolCall.name, toolCall.input, conv, emit);
 
                 if ("generate_sql".equals(toolCall.name)
-                    && "sql_saved".equals(result.get("status"))) {
+                        && "sql_saved".equals(result.get("status"))) {
                     generatedSteps.add(result);
                 }
 
@@ -120,13 +134,13 @@ public class AgentDomainService {
     // ── 工具执行 ──────────────────────────────────────────────────────────────
 
     private Map<String, Object> executeTool(String name,
-                                             Map<String, Object> input,
-                                             Conversation conv,
-                                             Consumer<Map<String, Object>> emit) {
+                                            Map<String, Object> input,
+                                            Conversation conv,
+                                            Consumer<Map<String, Object>> emit) {
         switch (name) {
             case "list_project_tables": {
                 List<ConversationTable> rows =
-                    conversationRepository.findTablesByConversationId(conv.getId());
+                        conversationRepository.findTablesByConversationId(conv.getId());
                 List<Map<String, Object>> tables = rows.stream().map(ct -> {
                     Optional<SourceTable> t = sourceTableRepository.findById(ct.getTableId());
                     if (!t.isPresent()) return null;
@@ -187,7 +201,7 @@ public class AgentDomainService {
                 String sql = String.valueOf(input.get("sql"));
 
                 String filePath = etlDomainService.writeSqlFile(
-                    conv.getProjectId(), stepOrder, stepName, sql);
+                        conv.getProjectId(), stepOrder, stepName, sql);
 
                 Map<String, Object> genEvent = new HashMap<>();
                 genEvent.put("type", "step_generated");
@@ -217,10 +231,10 @@ public class AgentDomainService {
 
     private List<Map<String, Object>> buildHistory(Long conversationId) {
         return conversationRepository.findMessagesByConversationId(conversationId)
-            .stream()
-            .filter(m -> "user".equals(m.getRole()) || "assistant".equals(m.getRole()))
-            .map(m -> map("role", m.getRole(), "content", m.getContent()))
-            .collect(Collectors.toList());
+                .stream()
+                .filter(m -> "user".equals(m.getRole()) || "assistant".equals(m.getRole()))
+                .map(m -> map("role", m.getRole(), "content", m.getContent()))
+                .collect(Collectors.toList());
     }
 
     private void saveAssistantMessage(Long conversationId, String content) {
@@ -235,30 +249,45 @@ public class AgentDomainService {
     private List<Map<String, Object>> getToolsForState(int state) {
         List<String> names = TOOLS_BY_STATE.getOrDefault(state, Collections.emptyList());
         return ALL_TOOLS.stream()
-            .filter(t -> names.contains(t.get("name")))
-            .collect(Collectors.toList());
+                .filter(t -> names.contains(t.get("name")))
+                .collect(Collectors.toList());
     }
 
     private String buildSystemPrompt(int state) {
         String base = "You are an ETL development assistant for GaussDB data warehouses. " +
-            "GaussDB uses PostgreSQL-compatible SQL syntax. " +
-            "Always generate complete, executable SQL. ";
+                "GaussDB uses PostgreSQL-compatible SQL syntax. " +
+                "Always generate complete, executable SQL. ";
         switch (state) {
-            case 1: return base +
-                "Your task: analyze the user's ETL requirements. " +
-                "Use list_project_tables to see available source tables, " +
-                "use get_table_schema to understand column details. " +
-                "When you fully understand the requirements, call propose_schema " +
-                "to propose the target table structure.";
-            case 3: return base +
-                "The target table schema has been confirmed (shown in conversation history). " +
-                "Your task: plan the ETL execution steps. Consider whether temporary tables are needed. " +
-                "Call propose_etl_steps with the complete execution plan.";
-            case 4: return base +
-                "The ETL execution steps have been confirmed (shown in conversation history). " +
-                "Your task: generate GaussDB SQL for each step. " +
-                "Call generate_sql once per step in the order they appear in the confirmed plan.";
-            default: return base;
+            case 1:
+                return base +
+                        "Your task: analyze the user's ETL requirements. " +
+                        "Use list_project_tables to see available source tables, " +
+                        "use get_table_schema to understand column details. " +
+                        "When you fully understand the requirements, call propose_schema " +
+                        "to propose the target table structure.";
+            case 3:
+                return base +
+                        "The target table schema has been confirmed (shown in conversation history). " +
+                        "Your task: plan the COMPLETE ETL execution steps for a data-warehouse job. " +
+                        "A complete plan MUST explicitly include, as separate steps: " +
+                        "(1) a step that CREATES THE TARGET TABLE using the confirmed schema (is_temp_table=false); " +
+                        "(2) the data cleaning / transformation steps; " +
+                        "(3) a step to CREATE each TEMPORARY TABLE you decide to use (is_temp_table=true) — " +
+                        "only when temporary tables are actually needed; if none are needed, omit them entirely. " +
+                        "Order the steps so every temporary table and the target table are created BEFORE any step writes into them. " +
+                        "Call propose_etl_steps with this complete plan.";
+            case 4:
+                return base +
+                        "The ETL execution steps have been confirmed (shown in conversation history). " +
+                        "Your task: generate GaussDB SQL for each step. " +
+                        "Call generate_sql once per step in the order they appear in the confirmed plan. " +
+                        "Each step's SQL must be complete and executable: " +
+                        "the target-table-creation step must emit CREATE TABLE for the target table using the confirmed schema; " +
+                        "every step marked is_temp_table=true must emit CREATE TEMPORARY TABLE for that step's output table; " +
+                        "the cleaning/load steps must emit the transformation SQL (e.g. INSERT INTO ... SELECT) " +
+                        "that writes into the temporary or target tables.";
+            default:
+                return base;
         }
     }
 
@@ -333,7 +362,7 @@ public class AgentDomainService {
         stepProps.put("output_table", prop("string", ""));
         stepItem.put("properties", stepProps);
         stepItem.put("required", Arrays.asList("step_order", "step_name", "description",
-            "is_temp_table", "output_table"));
+                "is_temp_table", "output_table"));
 
         Map<String, Object> stepsArr = new LinkedHashMap<>();
         stepsArr.put("type", "array");
