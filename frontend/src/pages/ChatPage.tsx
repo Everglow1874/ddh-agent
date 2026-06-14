@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Layout, Input, Button, message as antdMessage, Spin } from "antd";
-import { TableOutlined } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   createConversation,
@@ -9,17 +8,13 @@ import {
   getMessages,
   confirmSchema,
   confirmSteps,
-  getConversationTables,
 } from "../api/conversations";
-import { getProjectTablesWithDetails } from "../api/projects";
 import { streamConversation } from "../api/sse";
 import { SchemaConfirmCard } from "./chat/SchemaConfirmCard";
 import { StepsConfirmCard } from "./chat/StepsConfirmCard";
 import { SqlResultPanel, type GeneratedStep } from "./chat/SqlResultPanel";
 import { ConversationSidebar } from "./chat/ConversationSidebar";
-import { TableSelectModal } from "./chat/TableSelectModal";
-import { SourceTableGraph } from "./chat/SourceTableGraph";
-import type { Conversation, Message, SchemaColumn, EtlStepProposal, SSEEvent, TableDetailOut } from "../api/types";
+import type { Conversation, Message, SchemaColumn, EtlStepProposal, SSEEvent } from "../api/types";
 
 const { Sider, Content } = Layout;
 
@@ -44,17 +39,6 @@ export function ChatPage() {
   const [jobId, setJobId] = useState<number | null>(null);
   const abortRef = useRef<(() => void) | null>(null);
 
-  // Project-level tables (all tables associated with this project)
-  const [projectTables, setProjectTables] = useState<TableDetailOut[]>([]);
-  const [projectTablesLoading, setProjectTablesLoading] = useState(false);
-
-  // Tables selected for the active conversation
-  const [convTables, setConvTables] = useState<TableDetailOut[]>([]);
-
-  // Modal states
-  const [tableSelectOpen, setTableSelectOpen] = useState(false);
-  const [graphOpen, setGraphOpen] = useState(false);
-
   useEffect(() => {
     (async () => {
       const convs = await listConversations(projectId);
@@ -66,55 +50,24 @@ export function ChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
-  const loadProjectTables = async () => {
-    setProjectTablesLoading(true);
-    try {
-      const tables = await getProjectTablesWithDetails(projectId);
-      setProjectTables(tables);
-    } finally {
-      setProjectTablesLoading(false);
-    }
-  };
-
   const selectConversation = async (cid: number) => {
     setActiveId(cid);
     setSchemaProposal(null);
     setStepsProposal(null);
     setGeneratedSteps([]);
     setJobId(null);
-    const [msgs, tables] = await Promise.all([
-      getMessages(cid),
-      getConversationTables(cid),
-    ]);
+    const msgs: Message[] = await getMessages(cid);
     setBubbles(
       msgs
         .filter((m) => m.role === "user" || m.role === "assistant")
         .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }))
     );
-    setConvTables(tables);
   };
 
-  // Open table-select modal and lazy-load project tables
-  const onNewConversationClick = async () => {
-    if (projectTables.length === 0) {
-      await loadProjectTables();
-    }
-    setTableSelectOpen(true);
-  };
-
-  const onTableSelectConfirm = async (selectedIds: number[]) => {
-    setTableSelectOpen(false);
-    const conv = await createConversation(projectId, selectedIds);
+  const onNewConversation = async () => {
+    const conv = await createConversation(projectId);
     setConversations((prev) => [conv, ...prev]);
-    // conv.table_ids is the persisted list; fetch full details
-    const tables = await getConversationTables(conv.id);
-    setConvTables(tables);
-    setActiveId(conv.id);
-    setSchemaProposal(null);
-    setStepsProposal(null);
-    setGeneratedSteps([]);
-    setJobId(null);
-    setBubbles([]);
+    selectConversation(conv.id);
   };
 
   const runStream = (cid: number) => {
@@ -203,25 +156,11 @@ export function ChatPage() {
           conversations={conversations}
           activeId={activeId}
           onSelect={selectConversation}
-          onNew={onNewConversationClick}
+          onNew={onNewConversation}
         />
       </Sider>
 
       <Content style={{ display: "flex", flexDirection: "column", background: "#f8faff", padding: 16 }}>
-        {/* Toolbar: show source tables button */}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-          <Button
-            icon={<TableOutlined />}
-            onClick={() => setGraphOpen(true)}
-            disabled={activeId === null}
-          >
-            显示源表
-            {convTables.length > 0 && (
-              <span style={{ marginLeft: 6, color: "#4361ee", fontWeight: 600 }}>({convTables.length})</span>
-            )}
-          </Button>
-        </div>
-
         <div style={{ flex: 1, overflowY: "auto", marginBottom: 12 }}>
           {bubbles.map((b, i) => (
             <div
@@ -275,23 +214,6 @@ export function ChatPage() {
         <h3>SQL 结果</h3>
         <SqlResultPanel steps={generatedSteps} jobId={jobId} />
       </Sider>
-
-      {/* Table selection modal (shown when creating a new conversation) */}
-      <TableSelectModal
-        open={tableSelectOpen}
-        projectTables={projectTables}
-        loading={projectTablesLoading}
-        initialSelected={[]}
-        onConfirm={onTableSelectConfirm}
-        onCancel={() => setTableSelectOpen(false)}
-      />
-
-      {/* UAM relationship graph modal */}
-      <SourceTableGraph
-        open={graphOpen}
-        tables={convTables}
-        onClose={() => setGraphOpen(false)}
-      />
     </Layout>
   );
 }

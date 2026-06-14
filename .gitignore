@@ -22,3 +22,7 @@ backend/projects/
 
 # 本机 Claude 配置，不同步
 .claude/
+/.idea/
+/backend-java/.idea/
+/backend-java/target/
+/backend-java/test-projects/
