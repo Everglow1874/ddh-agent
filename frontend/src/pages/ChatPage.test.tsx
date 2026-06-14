@@ -22,7 +22,7 @@ describe("ChatPage", () => {
 
   it("loads conversations on mount", async () => {
     vi.mocked(convApi.listConversations).mockResolvedValue([
-      { id: 7, project_id: 1, state: 1, created_at: "2026-05-31" },
+      { id: 7, project_id: 1, state: 1, created_at: "2026-05-31", table_ids: [] },
     ]);
     vi.mocked(convApi.getMessages).mockResolvedValue([]);
     renderChat();
