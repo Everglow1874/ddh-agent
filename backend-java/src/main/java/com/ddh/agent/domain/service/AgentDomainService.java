@@ -27,8 +27,8 @@ public class AgentDomainService {
     // ── 工具定义（对应 Python AGENT_TOOLS）────────────────────────────────────
 
     private static final List<Map<String, Object>> ALL_TOOLS = Arrays.asList(
-        tool("list_project_tables", "Get all source tables selected for this ETL project.",
-            paramsSingle("project_id", "integer", "The project ID")),
+        tool("list_project_tables", "Get all source tables selected for this conversation.",
+            noParams()),
         tool("get_table_schema", "Get column definitions (name, type, comment) for a source table.",
             paramsSingle("table_id", "integer", "The table ID")),
         tool("propose_schema",
@@ -128,10 +128,10 @@ public class AgentDomainService {
                                              Consumer<Map<String, Object>> emit) {
         switch (name) {
             case "list_project_tables": {
-                Long projectId = toLong(input.get("project_id"));
-                List<ProjectTable> rows = projectRepository.findTablesByProjectId(projectId);
-                List<Map<String, Object>> tables = rows.stream().map(pt -> {
-                    Optional<SourceTable> t = sourceTableRepository.findById(pt.getTableId());
+                List<ConversationTable> rows =
+                    conversationRepository.findTablesByConversationId(conv.getId());
+                List<Map<String, Object>> tables = rows.stream().map(ct -> {
+                    Optional<SourceTable> t = sourceTableRepository.findById(ct.getTableId());
                     if (!t.isPresent()) return null;
                     Map<String, Object> m = new HashMap<>();
                     m.put("id", t.get().getId());
@@ -274,6 +274,13 @@ public class AgentDomainService {
         t.put("description", desc);
         t.put("parameters", parameters);
         return t;
+    }
+
+    private static Map<String, Object> noParams() {
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("type", "object");
+        p.put("properties", new LinkedHashMap<>());
+        return p;
     }
 
     private static Map<String, Object> paramsSingle(String name, String type, String desc) {
