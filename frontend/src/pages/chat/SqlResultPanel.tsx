@@ -1,6 +1,6 @@
-import { Tabs, Button, Empty } from "antd";
+import { Tabs, Button, Empty, message } from "antd";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { downloadUrl } from "../../api/jobs";
+import { downloadJobZip } from "../../api/jobs";
 
 export interface GeneratedStep {
   step_order: number;
@@ -34,7 +34,14 @@ export function SqlResultPanel({ steps, jobId }: Props) {
           }))}
       />
       {jobId !== null && (
-        <Button type="primary" block style={{ marginTop: 12 }} href={downloadUrl(jobId)} target="_blank">
+        <Button
+          type="primary"
+          block
+          style={{ marginTop: 12 }}
+          onClick={() =>
+            downloadJobZip(jobId).catch(() => message.error("下载失败，请重试"))
+          }
+        >
           ⬇ 下载全部 (ZIP)
         </Button>
       )}
