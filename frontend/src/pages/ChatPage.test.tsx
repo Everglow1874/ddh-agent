@@ -6,6 +6,9 @@ import * as convApi from "../api/conversations";
 
 vi.mock("../api/conversations");
 vi.mock("../api/sse");
+vi.mock("../api/jobs", () => ({
+  getConversationJob: vi.fn().mockResolvedValue({ job_id: null, steps: [] }),
+}));
 
 function renderChat() {
   return render(

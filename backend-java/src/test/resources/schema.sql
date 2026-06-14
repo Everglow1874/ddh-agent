@@ -75,6 +75,7 @@ CREATE TABLE messages (
 CREATE TABLE etl_jobs (
     id            BIGINT AUTO_INCREMENT PRIMARY KEY,
     project_id    BIGINT NOT NULL,
+    conversation_id BIGINT,
     target_table  VARCHAR(128) NOT NULL,
     target_schema TEXT,
     plan_md_path  VARCHAR(512),

@@ -67,8 +67,9 @@ CREATE TABLE IF NOT EXISTS messages (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会话消息表';
 
 CREATE TABLE IF NOT EXISTS etl_jobs (
-    id            BIGINT AUTO_INCREMENT PRIMARY KEY            COMMENT 'ETL作业ID',
-    project_id    BIGINT NOT NULL                              COMMENT '所属项目ID',
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY          COMMENT 'ETL作业ID',
+    project_id      BIGINT NOT NULL                            COMMENT '所属项目ID',
+    conversation_id BIGINT                                     COMMENT '生成该作业的会话ID',
     target_table  VARCHAR(128) NOT NULL                        COMMENT '目标表名',
     target_schema TEXT                                         COMMENT '目标表结构（JSON数组）',
     plan_md_path  VARCHAR(512)                                 COMMENT '计划文档(Markdown)路径',

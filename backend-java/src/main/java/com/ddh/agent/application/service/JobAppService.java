@@ -96,6 +96,43 @@ public class JobAppService {
         zos.closeEntry();
     }
 
+    /**
+     * 返回某对话最近一次生成的作业，用于页面刷新后恢复右侧 SQL 面板。
+     * 结构 {job_id, steps:[{step_order, step_name, sql}]}；无作业时 job_id=null、steps=[]。
+     */
+    public Map<String, Object> getConversationJob(Long conversationId) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        Optional<EtlJob> jobOpt = etlRepository.findLatestJobByConversationId(conversationId);
+        if (!jobOpt.isPresent()) {
+            result.put("job_id", null);
+            result.put("steps", Collections.emptyList());
+            return result;
+        }
+        EtlJob job = jobOpt.get();
+        List<Map<String, Object>> steps = new ArrayList<>();
+        for (EtlStep step : etlRepository.findStepsByJobId(job.getId())) {
+            Map<String, Object> sm = new LinkedHashMap<>();
+            sm.put("step_order", step.getStepOrder());
+            sm.put("step_name", step.getStepName());
+            sm.put("sql", readSqlSafe(step.getSqlFilePath()));
+            steps.add(sm);
+        }
+        result.put("job_id", job.getId());
+        result.put("steps", steps);
+        return result;
+    }
+
+    private String readSqlSafe(String path) {
+        if (path == null) return "";
+        try {
+            Path p = Paths.get(path);
+            return Files.exists(p)
+                ? new String(Files.readAllBytes(p), StandardCharsets.UTF_8) : "";
+        } catch (IOException e) {
+            return "";
+        }
+    }
+
     private Object parseSchema(EtlJob job) {
         if (job.getTargetSchema() == null || job.getTargetSchema().isEmpty()) {
             return Collections.emptyList();

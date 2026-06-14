@@ -12,6 +12,7 @@ public class EtlJob {
     @TableId(type = IdType.AUTO)
     private Long id;
     private Long projectId;
+    private Long conversationId;
     private String targetTable;
     /** JSON: [{"name":"col","type":"VARCHAR","comment":"..."}] */
     private String targetSchema;

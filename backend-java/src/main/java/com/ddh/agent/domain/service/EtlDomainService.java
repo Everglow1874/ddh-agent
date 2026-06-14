@@ -57,10 +57,11 @@ public class EtlDomainService {
         return path.toString();
     }
 
-    public EtlJob createJob(Long projectId, String targetTable,
+    public EtlJob createJob(Long projectId, Long conversationId, String targetTable,
                             List<Map<String, Object>> targetSchema, String planMdPath) {
         EtlJob job = new EtlJob();
         job.setProjectId(projectId);
+        job.setConversationId(conversationId);
         job.setTargetTable(targetTable);
         try { job.setTargetSchema(mapper.writeValueAsString(targetSchema)); }
         catch (Exception e) { job.setTargetSchema("[]"); }

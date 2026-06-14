@@ -10,6 +10,7 @@ import {
   confirmSteps,
 } from "../api/conversations";
 import { streamConversation } from "../api/sse";
+import { getConversationJob } from "../api/jobs";
 import { SchemaConfirmCard } from "./chat/SchemaConfirmCard";
 import { StepsConfirmCard } from "./chat/StepsConfirmCard";
 import { SqlResultPanel, type GeneratedStep } from "./chat/SqlResultPanel";
@@ -65,6 +66,12 @@ export function ChatPage() {
         .filter((m) => m.role === "user" || m.role === "assistant")
         .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }))
     );
+    // 刷新后恢复右侧 SQL 结果面板（该对话此前已生成的作业）
+    const job = await getConversationJob(cid);
+    if (job.job_id !== null) {
+      setJobId(job.job_id);
+      setGeneratedSteps(job.steps);
+    }
   };
 
   const onNewConversation = () => setNewModalOpen(true);

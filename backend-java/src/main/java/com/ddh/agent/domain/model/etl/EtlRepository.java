@@ -6,6 +6,7 @@ import java.util.Optional;
 public interface EtlRepository {
     Optional<EtlJob> findJobById(Long id);
     List<EtlJob> findJobsByProjectId(Long projectId);
+    Optional<EtlJob> findLatestJobByConversationId(Long conversationId);
     EtlJob saveJob(EtlJob job);
 
     List<EtlStep> findStepsByJobId(Long jobId);

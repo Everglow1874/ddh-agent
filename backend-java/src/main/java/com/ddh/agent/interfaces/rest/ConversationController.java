@@ -2,6 +2,7 @@ package com.ddh.agent.interfaces.rest;
 
 import com.ddh.agent.application.service.AgentAppService;
 import com.ddh.agent.application.service.ConversationAppService;
+import com.ddh.agent.application.service.JobAppService;
 import com.ddh.agent.interfaces.dto.request.*;
 import com.ddh.agent.interfaces.dto.response.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ public class ConversationController {
 
     @Autowired private ConversationAppService conversationAppService;
     @Autowired private AgentAppService agentAppService;
+    @Autowired private JobAppService jobAppService;
 
     @PostMapping("/projects/{projectId}/conversations")
     @ResponseStatus(HttpStatus.CREATED)
@@ -81,5 +83,12 @@ public class ConversationController {
     public SseEmitter stream(@PathVariable Long convId, Authentication auth) {
         conversationAppService.requireConversation(convId);
         return agentAppService.stream(convId);
+    }
+
+    /** 刷新页面后恢复该对话的 SQL 结果面板：返回 {job_id, steps:[{step_order, step_name, sql}]}。 */
+    @GetMapping("/conversations/{convId}/job")
+    public Map<String, Object> conversationJob(@PathVariable Long convId, Authentication auth) {
+        conversationAppService.requireConversation(convId);
+        return jobAppService.getConversationJob(convId);
     }
 }

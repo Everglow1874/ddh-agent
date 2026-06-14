@@ -109,7 +109,7 @@ public class AgentAppService {
             conv.getProjectId(), targetTable, requirement, stepsForPlan);
 
         EtlJob job = etlDomainService.createJob(
-            conv.getProjectId(), targetTable, targetSchema, planPath);
+            conv.getProjectId(), conv.getId(), targetTable, targetSchema, planPath);
 
         for (Map<String, Object> step : sorted) {
             etlDomainService.createStep(

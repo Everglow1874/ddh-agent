@@ -11,6 +11,17 @@ export async function getJob(jobId: number): Promise<EtlJob> {
   return resp.data;
 }
 
+export interface ConversationJob {
+  job_id: number | null;
+  steps: { step_order: number; step_name: string; sql: string }[];
+}
+
+/** 刷新页面后恢复某对话的 SQL 结果面板。无作业时 job_id 为 null。 */
+export async function getConversationJob(conversationId: number): Promise<ConversationJob> {
+  const resp = await client.get<ConversationJob>(`/conversations/${conversationId}/job`);
+  return resp.data;
+}
+
 export async function getStepSql(
   jobId: number,
   stepId: number

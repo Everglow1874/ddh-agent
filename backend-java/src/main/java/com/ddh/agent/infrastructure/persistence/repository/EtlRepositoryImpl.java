@@ -27,6 +27,16 @@ public class EtlRepositoryImpl implements EtlRepository {
     }
 
     @Override
+    public Optional<EtlJob> findLatestJobByConversationId(Long conversationId) {
+        List<EtlJob> jobs = etlJobMapper.selectList(
+            new LambdaQueryWrapper<EtlJob>()
+                .eq(EtlJob::getConversationId, conversationId)
+                .orderByDesc(EtlJob::getId)
+                .last("LIMIT 1"));
+        return jobs.isEmpty() ? Optional.empty() : Optional.of(jobs.get(0));
+    }
+
+    @Override
     public EtlJob saveJob(EtlJob job) {
         if (job.getId() == null) {
             etlJobMapper.insert(job);
