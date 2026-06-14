@@ -1,0 +1,44 @@
+
+Task 1: Maven 项目脚手架 (pom.xml, DdhAgentApplication, application.yml, schema.sql)
+
+Task 2: 领域实体 — User, Project, ProjectTable, SourceTable, TableColumn
+
+Task 3: 领域实体 — Conversation, Message, ConversationTable, EtlJob, EtlStep
+
+Task 4: 领域 Repository 接口 + LlmPort
+
+Task 5: MyBatis Plus Mapper 接口 (10个) + SourceTableMapper.xml
+
+Task 6: Repository 实现 (5个 Impl)
+
+Task 7: 基础设施配置类 (MybatisPlusConfig, CorsConfig, AppConfig)
+
+Task 8: JWT 安全层 (JwtUtil, JwtAuthFilter, SecurityConfig) + TDD
+
+Task 9: 公共 DTO + AppProperties
+
+Task 10: Auth 模块 (AuthAppService + AuthController) + TDD
+
+Task 11: Table 模块 (TableAppService + TableController) + TDD
+
+Task 12: Project 模块 (ProjectAppService + ProjectController) + TDD
+
+Task 13: Conversation CRUD 模块 (ConversationAppService + ConversationController) + TDD
+
+Task 14: LlmConfig + ClaudeAdapter
+
+Task 15: DeepSeekAdapter + QwenAdapter + OpenAiCompatibleAdapter 基类
+
+Task 16: AgentDomainService (状态机 + 5工具调用循环)
+
+Task 17: EtlDomainService + AgentAppService + GET /stream 端点
+
+Task 18: JobAppService + JobController (list/get/sql/download-zip)
+
+Task 19: AdminAppService + AdminController + DynamicLlmPort 热切换
+
+Task 20: 集成测试 (AuthControllerTest + TableControllerTest + ConversationControllerTest + JobControllerTest)
+
+Task 21: 最终验收 — 全部测试通过 + smoke test 清单
+
+10
