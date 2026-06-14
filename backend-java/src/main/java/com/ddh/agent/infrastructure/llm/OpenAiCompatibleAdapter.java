@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.*;
 import okhttp3.*;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 
 /** OpenAI 兼容的 /v1/chat/completions 适配器基类（DeepSeek / Qwen 共用）。 */
 public abstract class OpenAiCompatibleAdapter implements LlmPort {
@@ -137,7 +138,7 @@ public abstract class OpenAiCompatibleAdapter implements LlmPort {
     public LlmResponse chatWithToolsStream(List<Map<String, Object>> messages,
                                            List<Map<String, Object>> tools,
                                            String systemPrompt,
-                                           java.util.function.Consumer<String> onTextDelta) {
+                                           Consumer<String> onTextDelta) {
         try {
             ObjectNode body = buildRequestBody(messages, tools, systemPrompt);
             body.put("stream", true);
@@ -152,31 +153,44 @@ public abstract class OpenAiCompatibleAdapter implements LlmPort {
                     String rb = response.body() != null ? response.body().string() : "";
                     throw new RuntimeException(apiUrl + " error " + response.code() + ": " + rb);
                 }
-                okio.BufferedSource source = response.body().source();
-                List<String> lines = new ArrayList<>();
+                okhttp3.ResponseBody respBody = response.body();
+                if (respBody == null) {
+                    throw new RuntimeException(apiUrl + " empty streaming body");
+                }
+                okio.BufferedSource source = respBody.source();
+                StreamAccumulator acc = new StreamAccumulator();
                 String line;
                 while ((line = source.readUtf8Line()) != null) {
-                    lines.add(line);
+                    acc.processLine(line, onTextDelta);
                 }
-                return consumeStream(lines, onTextDelta);
+                return acc.build();
             }
         } catch (IOException e) {
             throw new RuntimeException("LLM streaming call failed: " + apiUrl, e);
         }
     }
 
-    /** 解析 OpenAI 兼容流式 data: 行序列（包级可见，便于单测）。 */
-    @SuppressWarnings("unchecked")
-    LlmResponse consumeStream(List<String> lines, java.util.function.Consumer<String> onTextDelta) {
-        StringBuilder fullText = new StringBuilder();
-        java.util.Map<Integer, ToolCallBuilder> toolBuilders = new java.util.LinkedHashMap<>();
-        String finishReason = "stop";
+    /** 解析 OpenAI 兼容流式 data: 行序列（包级可见，便于单测）。逐行处理，delta 即时回调。 */
+    LlmResponse consumeStream(List<String> lines, Consumer<String> onTextDelta) {
+        StreamAccumulator acc = new StreamAccumulator();
         for (String raw : lines) {
-            if (raw == null || !raw.startsWith("data:")) continue;
+            acc.processLine(raw, onTextDelta);
+        }
+        return acc.build();
+    }
+
+    /** 累积 OpenAI 兼容流式解析状态；逐行喂入，结束时 build。 */
+    private final class StreamAccumulator {
+        private final StringBuilder fullText = new StringBuilder();
+        private final java.util.Map<Integer, ToolCallBuilder> toolBuilders = new java.util.LinkedHashMap<>();
+        private String finishReason = "stop";
+
+        void processLine(String raw, Consumer<String> onTextDelta) {
+            if (raw == null || !raw.startsWith("data:")) return;
             String data = raw.substring("data:".length()).trim();
-            if (data.isEmpty() || "[DONE]".equals(data)) continue;
+            if (data.isEmpty() || "[DONE]".equals(data)) return;
             JsonNode root;
-            try { root = mapper.readTree(data); } catch (Exception e) { continue; }
+            try { root = mapper.readTree(data); } catch (Exception e) { return; }
             JsonNode choice = root.path("choices").path(0);
             JsonNode delta = choice.path("delta");
             JsonNode contentNode = delta.path("content");
@@ -198,18 +212,22 @@ public abstract class OpenAiCompatibleAdapter implements LlmPort {
             String fr = choice.path("finish_reason").asText("");
             if (!fr.isEmpty() && !"null".equals(fr)) finishReason = fr;
         }
-        String stopReason = "tool_calls".equals(finishReason) ? "tool_use" : "end_turn";
-        List<ToolCall> toolCalls = new ArrayList<>();
-        for (ToolCallBuilder b : toolBuilders.values()) {
-            Map<String, Object> input;
-            try {
-                input = b.args.length() > 0
-                    ? mapper.readValue(b.args.toString(), Map.class) : new HashMap<>();
-            } catch (Exception e) { input = new HashMap<>(); }
-            toolCalls.add(new ToolCall(b.id, b.name, input));
+
+        @SuppressWarnings("unchecked")
+        LlmResponse build() {
+            String stopReason = "tool_calls".equals(finishReason) ? "tool_use" : "end_turn";
+            List<ToolCall> toolCalls = new ArrayList<>();
+            for (ToolCallBuilder b : toolBuilders.values()) {
+                Map<String, Object> input;
+                try {
+                    input = b.args.length() > 0
+                        ? mapper.readValue(b.args.toString(), Map.class) : new HashMap<>();
+                } catch (Exception e) { input = new HashMap<>(); }
+                toolCalls.add(new ToolCall(b.id, b.name, input));
+            }
+            String text = fullText.length() > 0 ? fullText.toString() : null;
+            return new LlmResponse(text, stopReason, toolCalls);
         }
-        String text = fullText.length() > 0 ? fullText.toString() : null;
-        return new LlmResponse(text, stopReason, toolCalls);
     }
 
     private static class ToolCallBuilder {
