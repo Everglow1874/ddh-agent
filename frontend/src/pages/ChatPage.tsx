@@ -71,10 +71,14 @@ export function ChatPage() {
 
   const handleCreateConversation = async (tableIds: number[]) => {
     setNewModalOpen(false);
-    const conv = await createConversation(projectId, tableIds);
-    const convs = await listConversations(projectId); // 重新拉取，修复"旧对话被覆盖"
-    setConversations(convs);
-    selectConversation(conv.id);
+    try {
+      const conv = await createConversation(projectId, tableIds);
+      const convs = await listConversations(projectId); // 重新拉取，修复"旧对话被覆盖"
+      setConversations(convs);
+      selectConversation(conv.id);
+    } catch {
+      antdMessage.error("创建对话失败，请重试");
+    }
   };
 
   const runStream = (cid: number) => {
