@@ -112,5 +112,6 @@ export type SSEEvent =
   | { type: "error"; message: string }
   | { type: "waiting"; state: number; message: string }
   | { type: "already_done" }
+  | { type: "turn_end" }
   | { type: "stream_end" }
   | { type: "end" };

@@ -14,6 +14,7 @@ import { SchemaConfirmCard } from "./chat/SchemaConfirmCard";
 import { StepsConfirmCard } from "./chat/StepsConfirmCard";
 import { SqlResultPanel, type GeneratedStep } from "./chat/SqlResultPanel";
 import { ConversationSidebar } from "./chat/ConversationSidebar";
+import { MarkdownMessage } from "./chat/MarkdownMessage";
 import type { Conversation, Message, SchemaColumn, EtlStepProposal, SSEEvent } from "../api/types";
 
 const { Sider, Content } = Layout;
@@ -72,22 +73,28 @@ export function ChatPage() {
 
   const runStream = (cid: number) => {
     setStreaming(true);
-    let assistantText = "";
+    let bubbleOpen = false;
     abortRef.current = streamConversation(
       cid,
       (event: SSEEvent) => {
         switch (event.type) {
           case "token":
-            assistantText += event.text;
             setBubbles((prev) => {
               const next = [...prev];
-              if (next.length && next[next.length - 1].role === "assistant") {
-                next[next.length - 1] = { role: "assistant", content: assistantText };
+              if (bubbleOpen && next.length && next[next.length - 1].role === "assistant") {
+                next[next.length - 1] = {
+                  role: "assistant",
+                  content: next[next.length - 1].content + event.text,
+                };
               } else {
-                next.push({ role: "assistant", content: assistantText });
+                next.push({ role: "assistant", content: event.text });
               }
               return next;
             });
+            bubbleOpen = true;
+            break;
+          case "turn_end":
+            bubbleOpen = false;
             break;
           case "schema_proposal":
             setSchemaProposal({ target_table: event.target_table, columns: event.columns });
@@ -177,7 +184,7 @@ export function ChatPage() {
                   border: b.role === "assistant" ? "1px solid #e8eef8" : undefined,
                 }}
               >
-                {b.content}
+                {b.role === "assistant" ? <MarkdownMessage content={b.content} /> : b.content}
               </div>
             </div>
           ))}
