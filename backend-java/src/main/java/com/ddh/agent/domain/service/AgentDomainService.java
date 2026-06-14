@@ -1,8 +1,6 @@
 package com.ddh.agent.domain.service;
 
 import com.ddh.agent.domain.model.conversation.*;
-import com.ddh.agent.domain.model.project.ProjectRepository;
-import com.ddh.agent.domain.model.project.ProjectTable;
 import com.ddh.agent.domain.model.table.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,7 +16,6 @@ public class AgentDomainService {
 
     @Autowired private LlmPort llmPort;
     @Autowired private ConversationRepository conversationRepository;
-    @Autowired private ProjectRepository projectRepository;
     @Autowired private SourceTableRepository sourceTableRepository;
     @Autowired private EtlDomainService etlDomainService;
 
