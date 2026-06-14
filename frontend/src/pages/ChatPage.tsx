@@ -15,6 +15,7 @@ import { StepsConfirmCard } from "./chat/StepsConfirmCard";
 import { SqlResultPanel, type GeneratedStep } from "./chat/SqlResultPanel";
 import { ConversationSidebar } from "./chat/ConversationSidebar";
 import { MarkdownMessage } from "./chat/MarkdownMessage";
+import { NewConversationModal } from "./chat/NewConversationModal";
 import type { Conversation, Message, SchemaColumn, EtlStepProposal, SSEEvent } from "../api/types";
 
 const { Sider, Content } = Layout;
@@ -31,6 +32,7 @@ export function ChatPage() {
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
+  const [newModalOpen, setNewModalOpen] = useState(false);
   const [bubbles, setBubbles] = useState<ChatBubble[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -65,9 +67,13 @@ export function ChatPage() {
     );
   };
 
-  const onNewConversation = async () => {
-    const conv = await createConversation(projectId);
-    setConversations((prev) => [conv, ...prev]);
+  const onNewConversation = () => setNewModalOpen(true);
+
+  const handleCreateConversation = async (tableIds: number[]) => {
+    setNewModalOpen(false);
+    const conv = await createConversation(projectId, tableIds);
+    const convs = await listConversations(projectId); // 重新拉取，修复"旧对话被覆盖"
+    setConversations(convs);
     selectConversation(conv.id);
   };
 
@@ -218,6 +224,12 @@ export function ChatPage() {
           disabled={streaming || activeId === null}
         />
       </Content>
+
+      <NewConversationModal
+        open={newModalOpen}
+        onCancel={() => setNewModalOpen(false)}
+        onConfirm={handleCreateConversation}
+      />
 
       <Sider width={320} style={{ background: "#fff", borderLeft: "1px solid #e8eef8", padding: 12 }}>
         <h3>SQL 结果</h3>
