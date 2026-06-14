@@ -35,9 +35,11 @@ export function streamConversation(
         const chunks = buffer.split("\n\n");
         buffer = chunks.pop() ?? "";
         for (const chunk of chunks) {
-          const line = chunk.split("\n").find((l) => l.startsWith("data: "));
+          // SSE 允许 "data:value" 或 "data: value"（冒号后空格可选）。
+          // Spring 的 SseEmitter 发的是无空格的 "data:{json}"，故只匹配 "data:"。
+          const line = chunk.split("\n").find((l) => l.startsWith("data:"));
           if (!line) continue;
-          const json = line.slice("data: ".length);
+          const json = line.slice("data:".length);
           try {
             onEvent(JSON.parse(json) as SSEEvent);
           } catch {
@@ -59,10 +61,10 @@ export function streamConversation(
 export function parseSSEBuffer(buffer: string): SSEEvent[] {
   const events: SSEEvent[] = [];
   for (const chunk of buffer.split("\n\n")) {
-    const line = chunk.split("\n").find((l) => l.startsWith("data: "));
+    const line = chunk.split("\n").find((l) => l.startsWith("data:"));
     if (!line) continue;
     try {
-      events.push(JSON.parse(line.slice("data: ".length)) as SSEEvent);
+      events.push(JSON.parse(line.slice("data:".length)) as SSEEvent);
     } catch {
       // ignore
     }
