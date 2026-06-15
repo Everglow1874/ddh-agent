@@ -1,0 +1,467 @@
+{
+  "metadata": {
+    "skill_name": "gaussdb-etl-builder",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-06-15T17:01:51Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 56.2,
+        "tokens": 28353,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u76ee\u5f55\u4e2d\u5199\u51fa\u4e86 plan.md \u6587\u4ef6",
+          "passed": true,
+          "evidence": "plan.md \u5b58\u5728"
+        },
+        {
+          "text": "\u5199\u51fa\u4e86\u81f3\u5c11\u4e00\u4e2a step<\u5e8f\u53f7>_*.sql \u6587\u4ef6",
+          "passed": true,
+          "evidence": "step1_\u521b\u5efa\u76ee\u6807\u8868.sql\u3001step2_\u52a0\u8f7d\u5404\u79d1\u524d\u5341\u540d\u5b66\u751f\u6570\u636e.sql"
+        },
+        {
+          "text": "\u5b58\u5728 CREATE TABLE \u76ee\u6807\u8868\u4e14\u5b57\u6bb5\u8986\u76d6\u6392\u540d/\u5b66\u53f7/\u73ed\u4e3b\u4efb/\u5f97\u5206/\u79d1\u76ee\u7b49",
+          "passed": true,
+          "evidence": "step1 \u542b rank/head_teacher/score/subject \u7b49\u5217"
+        },
+        {
+          "text": "\u521b\u5efa\u76ee\u6807\u8868\u6b65\u9aa4\u5728 INSERT \u5199\u5165\u4e4b\u524d(\u5148\u5efa\u540e\u5199)",
+          "passed": true,
+          "evidence": "CREATE TABLE \u4f4d\u7f6e\u5148\u4e8e INSERT"
+        },
+        {
+          "text": "\u53d6\u6bcf\u79d1\u524d\u5341\u540d\u4f7f\u7528 ROW_NUMBER() \u7a97\u53e3\u51fd\u6570\u800c\u975e LIMIT \u5206\u7ec4",
+          "passed": true,
+          "evidence": "\u4f7f\u7528 ROW_NUMBER() OVER(PARTITION BY subject_id ...)"
+        },
+        {
+          "text": "\u4f7f\u7528 GaussDB/PG \u8bed\u6cd5,\u65e0 MySQL \u4e13\u6709\u51fd\u6570",
+          "passed": true,
+          "evidence": "\u672a\u51fa\u73b0 DATE_FORMAT/IFNULL/\u53cd\u5f15\u53f7"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 80.5,
+        "tokens": 30418,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u5199\u51fa plan.md \u548c\u81f3\u5c11\u4e00\u4e2a step<\u5e8f\u53f7>_*.sql \u6587\u4ef6",
+          "passed": true,
+          "evidence": "plan.md + step1/step2,\u9075\u5faa stepN \u547d\u540d"
+        },
+        {
+          "text": "\u76ee\u6807\u8868\u4e3a\u7528\u6237+\u6708\u4efd\u7c92\u5ea6\u5bbd\u8868,\u542b user_id/\u6708\u4efd/\u6d88\u8d39\u603b\u989d/\u8ba2\u5355\u6570",
+          "passed": true,
+          "evidence": "rpt_user_monthly_consumption(user_id,stat_month,city,total_amount,order_cnt)"
+        },
+        {
+          "text": "\u6309\u6708\u805a\u5408\u4f7f\u7528 to_char/date_trunc \u7684 PG \u5199\u6cd5",
+          "passed": true,
+          "evidence": "to_char(order_date,'YYYY-MM')"
+        },
+        {
+          "text": "\u8ba2\u5355\u8868\u4e0e\u7528\u6237\u8868\u901a\u8fc7 user_id JOIN",
+          "passed": true,
+          "evidence": "LEFT JOIN ods_users ON user_id"
+        },
+        {
+          "text": "\u521b\u5efa\u76ee\u6807\u8868/\u4e34\u65f6\u8868\u6b65\u9aa4\u5728\u5199\u5165\u4e4b\u524d(\u5148\u5efa\u540e\u5199)",
+          "passed": true,
+          "evidence": "\u5148\u5efa\u540e\u5199"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 48.1,
+        "tokens": 21657,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u751f\u6210 SQL \u524d\u4e3b\u52a8\u5411\u7528\u6237\u7d22\u8981\u6e90\u8868\u7ed3\u6784/\u5b57\u6bb5\u6e05\u5355",
+          "passed": true,
+          "evidence": "response.md \u7d22\u8981\u8868\u540d/\u5b57\u6bb5/\u7c7b\u578b/\u5efa\u8868\u8bed\u53e5,\u672a\u4ea7\u51fa SQL"
+        },
+        {
+          "text": "\u7f3a\u6e90\u8868\u7ed3\u6784\u65f6\u672a\u81c6\u9020\u5b57\u6bb5\u76f4\u63a5\u4ea7\u51fa\u6700\u7ec8 SQL",
+          "passed": true,
+          "evidence": "\u65e0 .sql \u6587\u4ef6,\u65e0 CREATE TABLE"
+        },
+        {
+          "text": "\u660e\u786e\u8bf4\u660e\u7f3a\u5c11\u54ea\u4e9b\u4fe1\u606f\u3001\u9700\u7528\u6237\u63d0\u4f9b\u4ec0\u4e48\u624d\u80fd\u7ee7\u7eed",
+          "passed": true,
+          "evidence": "\u5217\u51fa\u9700\u8981\u7684\u533a\u57df\u7ef4\u5ea6/\u65e5\u671f\u5b57\u6bb5/\u6307\u6807\u6765\u6e90\u7b49"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 106.7,
+        "tokens": 32691,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u65e5\u671f/\u589e\u91cf\u8fc7\u6ee4\u5904\u4f7f\u7528 ${TX_DATE} \u5360\u4f4d\u7b26",
+          "passed": true,
+          "evidence": "WHERE tx_date = '${TX_DATE}'"
+        },
+        {
+          "text": "\u672a\u628a ${TX_DATE} \u66ff\u6362\u6210\u5177\u4f53\u65e5\u671f\u5b57\u9762\u91cf",
+          "passed": true,
+          "evidence": "\u5360\u4f4d\u7b26\u539f\u6837\u4fdd\u7559,\u65e0 '20xx-xx-xx'"
+        },
+        {
+          "text": "\u5411\u7528\u6237\u8bf4\u660e\u6240\u7528\u5e73\u53f0\u53d8\u91cf\u53ca\u542b\u4e49(\u6267\u884c\u65e5\u524d\u4e00\u5929)",
+          "passed": true,
+          "evidence": "\u62a5\u544a\u8bf4\u660e ${TX_DATE}=\u6267\u884c\u65e5\u524d\u4e00\u5929\u3001${RUN_DATE} \u8bb0\u5f55\u52a0\u5de5\u65f6\u95f4"
+        },
+        {
+          "text": "\u5199\u51fa plan.md \u548c\u6bcf\u6b65 SQL \u6587\u4ef6",
+          "passed": true,
+          "evidence": "plan.md + step1/2/3,\u9075\u5faa stepN \u547d\u540d"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 90.8,
+        "tokens": 31992,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u76f4\u63a5\u5229\u7528\u77e5\u8bc6\u6587\u6863\u5173\u8054\u952e\u5199 JOIN,\u672a\u91cd\u590d\u8ffd\u95ee\u5173\u8054\u5173\u7cfb",
+          "passed": true,
+          "evidence": "\u590d\u7528\u4e09\u7ec4\u5173\u8054\u952e(student/class/subject),\u62a5\u544a\u660e\u786e\u8bf4\u660e"
+        },
+        {
+          "text": "\u6309\u77e5\u8bc6\u6587\u6863\u53e3\u5f84\u5254\u9664\u7f3a\u8003(is_absent=0)",
+          "passed": true,
+          "evidence": "step2 \u542b is_absent=0"
+        },
+        {
+          "text": "\u5b8c\u6210\u540e\u66f4\u65b0/\u5199\u56de\u77e5\u8bc6\u6587\u6863(\u6216\u5c55\u793a\u53d8\u66f4\u6458\u8981)",
+          "passed": true,
+          "evidence": "\u8f93\u51fa knowledge_updated.md,\u589e\u91cf\u8865\u5168 dim_subject\u3001\u65b0\u589e\u53e3\u5f84"
+        },
+        {
+          "text": "\u5199\u51fa plan.md \u548c\u6bcf\u6b65 SQL \u6587\u4ef6",
+          "passed": true,
+          "evidence": "plan.md + step1/step2,\u9075\u5faa stepN \u547d\u540d"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6667,
+        "passed": 4,
+        "failed": 2,
+        "total": 6,
+        "time_seconds": 132.5,
+        "tokens": 26141,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u8f93\u51fa\u76ee\u5f55\u4e2d\u5199\u51fa\u4e86 plan.md \u6587\u4ef6",
+          "passed": true,
+          "evidence": "00_etl_plan.md"
+        },
+        {
+          "text": "\u5199\u51fa\u4e86\u81f3\u5c11\u4e00\u4e2a step<\u5e8f\u53f7>_*.sql \u6587\u4ef6",
+          "passed": false,
+          "evidence": "\u4ea7\u51fa 01_ddl.sql/02_.. \u7b49\u547d\u540d,\u672a\u9075\u5faa stepN_<\u540d\u79f0> \u7ea6\u5b9a"
+        },
+        {
+          "text": "\u5b58\u5728 CREATE TABLE \u76ee\u6807\u8868\u4e14\u5b57\u6bb5\u8986\u76d6\u6392\u540d/\u5b66\u53f7/\u73ed\u4e3b\u4efb/\u5f97\u5206/\u79d1\u76ee\u7b49",
+          "passed": true,
+          "evidence": "01_ddl.sql \u5b57\u6bb5\u9f50\u5168"
+        },
+        {
+          "text": "\u521b\u5efa\u76ee\u6807\u8868\u6b65\u9aa4\u5728 INSERT \u5199\u5165\u4e4b\u524d(\u5148\u5efa\u540e\u5199)",
+          "passed": true,
+          "evidence": "DDL \u5728\u88c5\u8f7d\u4e4b\u524d"
+        },
+        {
+          "text": "\u53d6\u6bcf\u79d1\u524d\u5341\u540d\u4f7f\u7528 ROW_NUMBER() \u7a97\u53e3\u51fd\u6570\u800c\u975e LIMIT \u5206\u7ec4",
+          "passed": false,
+          "evidence": "\u4f7f\u7528 RANK() OVER \u4e14 PARTITION BY \u5e74\u7ea7+\u79d1\u76ee,\u5e76\u5217\u65f6\u53ef\u80fd >10 \u884c,\u4e0e ROW_NUMBER \u8bed\u4e49\u4e0d\u540c"
+        },
+        {
+          "text": "\u4f7f\u7528 GaussDB/PG \u8bed\u6cd5,\u65e0 MySQL \u4e13\u6709\u51fd\u6570",
+          "passed": true,
+          "evidence": "\u65e0 MySQL \u4e13\u6709\u51fd\u6570"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 134.0,
+        "tokens": 26080,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u5199\u51fa plan.md \u548c\u81f3\u5c11\u4e00\u4e2a step<\u5e8f\u53f7>_*.sql \u6587\u4ef6",
+          "passed": false,
+          "evidence": "plan.md \u5b58\u5728\u4f46 SQL \u547d\u540d\u4e3a 00_/01_/run_all,\u672a\u9075\u5faa stepN_<\u540d\u79f0> \u7ea6\u5b9a"
+        },
+        {
+          "text": "\u76ee\u6807\u8868\u4e3a\u7528\u6237+\u6708\u4efd\u7c92\u5ea6\u5bbd\u8868,\u542b user_id/\u6708\u4efd/\u6d88\u8d39\u603b\u989d/\u8ba2\u5355\u6570",
+          "passed": true,
+          "evidence": "dws_user_consume_monthly \u7528\u6237\u00d7\u6708\u7c92\u5ea6"
+        },
+        {
+          "text": "\u6309\u6708\u805a\u5408\u4f7f\u7528 to_char/date_trunc \u7684 PG \u5199\u6cd5",
+          "passed": true,
+          "evidence": "date_trunc('month',order_date)"
+        },
+        {
+          "text": "\u8ba2\u5355\u8868\u4e0e\u7528\u6237\u8868\u901a\u8fc7 user_id JOIN",
+          "passed": true,
+          "evidence": "LEFT JOIN ods_users on user_id"
+        },
+        {
+          "text": "\u521b\u5efa\u76ee\u6807\u8868/\u4e34\u65f6\u8868\u6b65\u9aa4\u5728\u5199\u5165\u4e4b\u524d(\u5148\u5efa\u540e\u5199)",
+          "passed": true,
+          "evidence": "DDL \u5148\u4e8e\u88c5\u8f7d"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.3333,
+        "passed": 1,
+        "failed": 2,
+        "total": 3,
+        "time_seconds": 154.6,
+        "tokens": 26403,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u751f\u6210 SQL \u524d\u4e3b\u52a8\u5411\u7528\u6237\u7d22\u8981\u6e90\u8868\u7ed3\u6784/\u5b57\u6bb5\u6e05\u5355",
+          "passed": false,
+          "evidence": "\u76f4\u63a5\u4ea7\u51fa ETL,\u5047\u8bbe\u4e86 ods_sales_detail \u5b57\u6bb5"
+        },
+        {
+          "text": "\u7f3a\u6e90\u8868\u7ed3\u6784\u65f6\u672a\u81c6\u9020\u5b57\u6bb5\u76f4\u63a5\u4ea7\u51fa\u6700\u7ec8 SQL",
+          "passed": false,
+          "evidence": "01_create_target_table.sql/03_etl_load.sql \u57fa\u4e8e\u81c6\u9020\u5b57\u6bb5"
+        },
+        {
+          "text": "\u660e\u786e\u8bf4\u660e\u7f3a\u5c11\u54ea\u4e9b\u4fe1\u606f\u3001\u9700\u7528\u6237\u63d0\u4f9b\u4ec0\u4e48\u624d\u80fd\u7ee7\u7eed",
+          "passed": true,
+          "evidence": "\u5728 plan/response \u4e2d\u6807\u6ce8\u4e86\u5047\u8bbe\u5b57\u6bb5\u3001\u63d0\u793a\u9700\u5bf9\u9f50\u771f\u5b9e\u5217\u540d"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 133.5,
+        "tokens": 24329,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u65e5\u671f/\u589e\u91cf\u8fc7\u6ee4\u5904\u4f7f\u7528 ${TX_DATE} \u5360\u4f4d\u7b26",
+          "passed": true,
+          "evidence": "\u8bfb\u53d6\u4e86\u5e73\u53f0\u53d8\u91cf\u6587\u6863\u5e76\u4f7f\u7528 '${TX_DATE}'"
+        },
+        {
+          "text": "\u672a\u628a ${TX_DATE} \u66ff\u6362\u6210\u5177\u4f53\u65e5\u671f\u5b57\u9762\u91cf",
+          "passed": true,
+          "evidence": "\u5360\u4f4d\u7b26\u4fdd\u7559"
+        },
+        {
+          "text": "\u5411\u7528\u6237\u8bf4\u660e\u6240\u7528\u5e73\u53f0\u53d8\u91cf\u53ca\u542b\u4e49(\u6267\u884c\u65e5\u524d\u4e00\u5929)",
+          "passed": true,
+          "evidence": "\u6458\u8981\u8bf4\u660e\u53d8\u91cf\u8bed\u4e49"
+        },
+        {
+          "text": "\u5199\u51fa plan.md \u548c\u6bcf\u6b65 SQL \u6587\u4ef6",
+          "passed": true,
+          "evidence": "00_plan.md + 01..05 SQL(\u975e stepN \u547d\u540d,\u4f46\u672c\u65ad\u8a00\u4e0d\u8981\u6c42)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 127.5,
+        "tokens": 25488,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u76f4\u63a5\u5229\u7528\u77e5\u8bc6\u6587\u6863\u5173\u8054\u952e\u5199 JOIN,\u672a\u91cd\u590d\u8ffd\u95ee\u5173\u8054\u5173\u7cfb",
+          "passed": true,
+          "evidence": "\u8bfb\u53d6\u77e5\u8bc6\u6587\u6863\u5e76\u6309\u5173\u8054\u8def\u5f84 JOIN"
+        },
+        {
+          "text": "\u6309\u77e5\u8bc6\u6587\u6863\u53e3\u5f84\u5254\u9664\u7f3a\u8003(is_absent=0)",
+          "passed": true,
+          "evidence": "step2_transform.sql \u542b is_absent=0"
+        },
+        {
+          "text": "\u5b8c\u6210\u540e\u66f4\u65b0/\u5199\u56de\u77e5\u8bc6\u6587\u6863(\u6216\u5c55\u793a\u53d8\u66f4\u6458\u8981)",
+          "passed": true,
+          "evidence": "\u8f93\u51fa knowledge_updated.md,\u8865\u5168\u5b57\u6bb5\u5e76\u65b0\u589e\u53e3\u5f84"
+        },
+        {
+          "text": "\u5199\u51fa plan.md \u548c\u6bcf\u6b65 SQL \u6587\u4ef6",
+          "passed": true,
+          "evidence": "ETL_plan.md + step1..4(\u9075\u5faa stepN \u547d\u540d)"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 76.46,
+        "stddev": 24.2444,
+        "min": 48.1,
+        "max": 106.7
+      },
+      "tokens": {
+        "mean": 29022.2,
+        "stddev": 4441.9045,
+        "min": 21657,
+        "max": 32691
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.76,
+        "stddev": 0.2773,
+        "min": 0.3333,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 136.42,
+        "stddev": 10.486,
+        "min": 127.5,
+        "max": 154.6
+      },
+      "tokens": {
+        "mean": 25688.2,
+        "stddev": 830.2076,
+        "min": 24329,
+        "max": 26403
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.24",
+      "time_seconds": "-60.0",
+      "tokens": "+3334"
+    }
+  },
+  "notes": []
+}

@@ -1,0 +1,42 @@
+{
+  "eval_id": 0,
+  "arm": "with_skill",
+  "expectations": [
+    {
+      "text": "输出目录中写出了 plan.md 文件",
+      "passed": true,
+      "evidence": "plan.md 存在"
+    },
+    {
+      "text": "写出了至少一个 step<序号>_*.sql 文件",
+      "passed": true,
+      "evidence": "step1_创建目标表.sql、step2_加载各科前十名学生数据.sql"
+    },
+    {
+      "text": "存在 CREATE TABLE 目标表且字段覆盖排名/学号/班主任/得分/科目等",
+      "passed": true,
+      "evidence": "step1 含 rank/head_teacher/score/subject 等列"
+    },
+    {
+      "text": "创建目标表步骤在 INSERT 写入之前(先建后写)",
+      "passed": true,
+      "evidence": "CREATE TABLE 位置先于 INSERT"
+    },
+    {
+      "text": "取每科前十名使用 ROW_NUMBER() 窗口函数而非 LIMIT 分组",
+      "passed": true,
+      "evidence": "使用 ROW_NUMBER() OVER(PARTITION BY subject_id ...)"
+    },
+    {
+      "text": "使用 GaussDB/PG 语法,无 MySQL 专有函数",
+      "passed": true,
+      "evidence": "未出现 DATE_FORMAT/IFNULL/反引号"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

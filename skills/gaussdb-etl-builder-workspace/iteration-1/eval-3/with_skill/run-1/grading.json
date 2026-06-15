@@ -1,0 +1,32 @@
+{
+  "eval_id": 3,
+  "arm": "with_skill",
+  "expectations": [
+    {
+      "text": "日期/增量过滤处使用 ${TX_DATE} 占位符",
+      "passed": true,
+      "evidence": "WHERE tx_date = '${TX_DATE}'"
+    },
+    {
+      "text": "未把 ${TX_DATE} 替换成具体日期字面量",
+      "passed": true,
+      "evidence": "占位符原样保留,无 '20xx-xx-xx'"
+    },
+    {
+      "text": "向用户说明所用平台变量及含义(执行日前一天)",
+      "passed": true,
+      "evidence": "报告说明 ${TX_DATE}=执行日前一天、${RUN_DATE} 记录加工时间"
+    },
+    {
+      "text": "写出 plan.md 和每步 SQL 文件",
+      "passed": true,
+      "evidence": "plan.md + step1/2/3,遵循 stepN 命名"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

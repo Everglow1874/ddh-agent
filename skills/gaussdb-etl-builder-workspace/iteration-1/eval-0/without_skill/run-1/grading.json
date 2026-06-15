@@ -1,0 +1,42 @@
+{
+  "eval_id": 0,
+  "arm": "without_skill",
+  "expectations": [
+    {
+      "text": "输出目录中写出了 plan.md 文件",
+      "passed": true,
+      "evidence": "00_etl_plan.md"
+    },
+    {
+      "text": "写出了至少一个 step<序号>_*.sql 文件",
+      "passed": false,
+      "evidence": "产出 01_ddl.sql/02_.. 等命名,未遵循 stepN_<名称> 约定"
+    },
+    {
+      "text": "存在 CREATE TABLE 目标表且字段覆盖排名/学号/班主任/得分/科目等",
+      "passed": true,
+      "evidence": "01_ddl.sql 字段齐全"
+    },
+    {
+      "text": "创建目标表步骤在 INSERT 写入之前(先建后写)",
+      "passed": true,
+      "evidence": "DDL 在装载之前"
+    },
+    {
+      "text": "取每科前十名使用 ROW_NUMBER() 窗口函数而非 LIMIT 分组",
+      "passed": false,
+      "evidence": "使用 RANK() OVER 且 PARTITION BY 年级+科目,并列时可能 >10 行,与 ROW_NUMBER 语义不同"
+    },
+    {
+      "text": "使用 GaussDB/PG 语法,无 MySQL 专有函数",
+      "passed": true,
+      "evidence": "无 MySQL 专有函数"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 2,
+    "total": 6,
+    "pass_rate": 0.6667
+  }
+}

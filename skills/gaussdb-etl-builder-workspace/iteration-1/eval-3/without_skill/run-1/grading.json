@@ -1,0 +1,32 @@
+{
+  "eval_id": 3,
+  "arm": "without_skill",
+  "expectations": [
+    {
+      "text": "日期/增量过滤处使用 ${TX_DATE} 占位符",
+      "passed": true,
+      "evidence": "读取了平台变量文档并使用 '${TX_DATE}'"
+    },
+    {
+      "text": "未把 ${TX_DATE} 替换成具体日期字面量",
+      "passed": true,
+      "evidence": "占位符保留"
+    },
+    {
+      "text": "向用户说明所用平台变量及含义(执行日前一天)",
+      "passed": true,
+      "evidence": "摘要说明变量语义"
+    },
+    {
+      "text": "写出 plan.md 和每步 SQL 文件",
+      "passed": true,
+      "evidence": "00_plan.md + 01..05 SQL(非 stepN 命名,但本断言不要求)"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

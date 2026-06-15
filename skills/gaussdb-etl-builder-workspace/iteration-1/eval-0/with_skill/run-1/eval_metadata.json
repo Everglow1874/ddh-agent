@@ -1,0 +1,13 @@
+{
+  "eval_id": 0,
+  "eval_name": "exam-top10-with-schemas",
+  "prompt": "我要统计最近一次考试,年级里各科前十名的学生信息以及班主任信息,生成一张报表表。源表结构见附件 exam_source_tables.sql。请走完整流程生成 ETL 作业。这是自动化端到端运行,流程中凡是需要我确认的地方默认确认并继续,直到把 plan.md 和每步 SQL 写入输出目录。",
+  "assertions": [
+    {"text": "输出目录中写出了 plan.md 文件"},
+    {"text": "输出目录中写出了至少一个 step<序号>_*.sql 文件"},
+    {"text": "存在 CREATE TABLE 目标表的步骤,且字段覆盖考试名/科目/排名/学号/姓名/班级/班主任/得分"},
+    {"text": "创建目标表的步骤在任何 INSERT 写入步骤之前(先建后写)"},
+    {"text": "取每科前十名使用窗口函数 ROW_NUMBER() OVER(PARTITION BY ...),而非用 LIMIT 做分组取 N"},
+    {"text": "使用 GaussDB/PostgreSQL 语法,未出现 MySQL 专有函数(如 DATE_FORMAT、DATE_SUB、IFNULL)"}
+  ]
+}

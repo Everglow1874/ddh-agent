@@ -1,0 +1,37 @@
+{
+  "eval_id": 1,
+  "arm": "without_skill",
+  "expectations": [
+    {
+      "text": "写出 plan.md 和至少一个 step<序号>_*.sql 文件",
+      "passed": false,
+      "evidence": "plan.md 存在但 SQL 命名为 00_/01_/run_all,未遵循 stepN_<名称> 约定"
+    },
+    {
+      "text": "目标表为用户+月份粒度宽表,含 user_id/月份/消费总额/订单数",
+      "passed": true,
+      "evidence": "dws_user_consume_monthly 用户×月粒度"
+    },
+    {
+      "text": "按月聚合使用 to_char/date_trunc 的 PG 写法",
+      "passed": true,
+      "evidence": "date_trunc('month',order_date)"
+    },
+    {
+      "text": "订单表与用户表通过 user_id JOIN",
+      "passed": true,
+      "evidence": "LEFT JOIN ods_users on user_id"
+    },
+    {
+      "text": "创建目标表/临时表步骤在写入之前(先建后写)",
+      "passed": true,
+      "evidence": "DDL 先于装载"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.8
+  }
+}

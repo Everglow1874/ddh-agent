@@ -1,0 +1,37 @@
+{
+  "eval_id": 1,
+  "arm": "with_skill",
+  "expectations": [
+    {
+      "text": "写出 plan.md 和至少一个 step<序号>_*.sql 文件",
+      "passed": true,
+      "evidence": "plan.md + step1/step2,遵循 stepN 命名"
+    },
+    {
+      "text": "目标表为用户+月份粒度宽表,含 user_id/月份/消费总额/订单数",
+      "passed": true,
+      "evidence": "rpt_user_monthly_consumption(user_id,stat_month,city,total_amount,order_cnt)"
+    },
+    {
+      "text": "按月聚合使用 to_char/date_trunc 的 PG 写法",
+      "passed": true,
+      "evidence": "to_char(order_date,'YYYY-MM')"
+    },
+    {
+      "text": "订单表与用户表通过 user_id JOIN",
+      "passed": true,
+      "evidence": "LEFT JOIN ods_users ON user_id"
+    },
+    {
+      "text": "创建目标表/临时表步骤在写入之前(先建后写)",
+      "passed": true,
+      "evidence": "先建后写"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}

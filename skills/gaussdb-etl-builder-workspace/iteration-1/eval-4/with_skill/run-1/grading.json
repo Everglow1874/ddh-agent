@@ -1,0 +1,32 @@
+{
+  "eval_id": 4,
+  "arm": "with_skill",
+  "expectations": [
+    {
+      "text": "直接利用知识文档关联键写 JOIN,未重复追问关联关系",
+      "passed": true,
+      "evidence": "复用三组关联键(student/class/subject),报告明确说明"
+    },
+    {
+      "text": "按知识文档口径剔除缺考(is_absent=0)",
+      "passed": true,
+      "evidence": "step2 含 is_absent=0"
+    },
+    {
+      "text": "完成后更新/写回知识文档(或展示变更摘要)",
+      "passed": true,
+      "evidence": "输出 knowledge_updated.md,增量补全 dim_subject、新增口径"
+    },
+    {
+      "text": "写出 plan.md 和每步 SQL 文件",
+      "passed": true,
+      "evidence": "plan.md + step1/step2,遵循 stepN 命名"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

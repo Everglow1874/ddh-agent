@@ -1,0 +1,27 @@
+{
+  "eval_id": 2,
+  "arm": "without_skill",
+  "expectations": [
+    {
+      "text": "生成 SQL 前主动向用户索要源表结构/字段清单",
+      "passed": false,
+      "evidence": "直接产出 ETL,假设了 ods_sales_detail 字段"
+    },
+    {
+      "text": "缺源表结构时未臆造字段直接产出最终 SQL",
+      "passed": false,
+      "evidence": "01_create_target_table.sql/03_etl_load.sql 基于臆造字段"
+    },
+    {
+      "text": "明确说明缺少哪些信息、需用户提供什么才能继续",
+      "passed": true,
+      "evidence": "在 plan/response 中标注了假设字段、提示需对齐真实列名"
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 2,
+    "total": 3,
+    "pass_rate": 0.3333
+  }
+}

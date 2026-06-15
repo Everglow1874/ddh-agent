@@ -1,0 +1,11 @@
+{
+  "eval_id": 4,
+  "eval_name": "knowledge-doc-reuse",
+  "prompt": "基于已沉淀的知识文档 knowledge.md 和源表 exam_source_tables.sql,生成一张『各班级各科平均分』报表表的 ETL 作业。这是自动化端到端运行,凡需确认处默认确认并继续,直到把 plan.md 和每步 SQL 写入输出目录;完成后按知识文档的规则更新它。",
+  "assertions": [
+    {"text": "直接利用知识文档中已记录的关联键写 JOIN,未重复追问表间关联关系"},
+    {"text": "按知识文档口径,统计平均分时剔除缺考记录(is_absent=0)"},
+    {"text": "完成后更新/写回了知识文档(或展示了变更摘要并征求确认)"},
+    {"text": "输出目录中写出了 plan.md 和每步 SQL 文件"}
+  ]
+}

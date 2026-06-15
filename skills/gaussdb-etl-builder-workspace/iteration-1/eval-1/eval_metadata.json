@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "orders-users-monthly-wide",
+  "prompt": "把订单表和用户表加工成一张按月的用户消费宽表(每个用户每个自然月的消费总金额、订单数、所在城市)。源表结构见附件 orders_users.sql。这是自动化端到端运行,凡需确认处默认确认并继续,直到把 plan.md 和每步 SQL 写入输出目录。",
+  "assertions": [
+    {"text": "输出目录中写出了 plan.md 和至少一个 step<序号>_*.sql 文件"},
+    {"text": "目标表是按用户+月份粒度的宽表,字段含 user_id、统计月份、消费总金额、订单数"},
+    {"text": "按月聚合使用 to_char(order_date,'YYYY-MM') 或 date_trunc('month',...) 的 PG 写法"},
+    {"text": "订单表与用户表通过 user_id 做 JOIN 关联"},
+    {"text": "创建目标表/临时表的步骤在写入它们的步骤之前(先建后写)"}
+  ]
+}

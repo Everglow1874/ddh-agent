@@ -1,0 +1,32 @@
+{
+  "eval_id": 4,
+  "arm": "without_skill",
+  "expectations": [
+    {
+      "text": "直接利用知识文档关联键写 JOIN,未重复追问关联关系",
+      "passed": true,
+      "evidence": "读取知识文档并按关联路径 JOIN"
+    },
+    {
+      "text": "按知识文档口径剔除缺考(is_absent=0)",
+      "passed": true,
+      "evidence": "step2_transform.sql 含 is_absent=0"
+    },
+    {
+      "text": "完成后更新/写回知识文档(或展示变更摘要)",
+      "passed": true,
+      "evidence": "输出 knowledge_updated.md,补全字段并新增口径"
+    },
+    {
+      "text": "写出 plan.md 和每步 SQL 文件",
+      "passed": true,
+      "evidence": "ETL_plan.md + step1..4(遵循 stepN 命名)"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

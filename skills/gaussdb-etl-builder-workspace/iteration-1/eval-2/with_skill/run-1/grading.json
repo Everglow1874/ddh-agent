@@ -1,0 +1,27 @@
+{
+  "eval_id": 2,
+  "arm": "with_skill",
+  "expectations": [
+    {
+      "text": "生成 SQL 前主动向用户索要源表结构/字段清单",
+      "passed": true,
+      "evidence": "response.md 索要表名/字段/类型/建表语句,未产出 SQL"
+    },
+    {
+      "text": "缺源表结构时未臆造字段直接产出最终 SQL",
+      "passed": true,
+      "evidence": "无 .sql 文件,无 CREATE TABLE"
+    },
+    {
+      "text": "明确说明缺少哪些信息、需用户提供什么才能继续",
+      "passed": true,
+      "evidence": "列出需要的区域维度/日期字段/指标来源等"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  }
+}
