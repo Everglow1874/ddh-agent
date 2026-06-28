@@ -12,6 +12,7 @@ public class ConversationAssembler {
         ConversationResponse r = new ConversationResponse();
         r.setId(c.getId());
         r.setProjectId(c.getProjectId());
+        r.setName(c.getName());
         r.setState(c.getState());
         r.setCreatedAt(c.getCreatedAt());
         r.setTableIds(tableIds);

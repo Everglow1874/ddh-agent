@@ -78,6 +78,21 @@ public class ConversationController {
         return conversationAppService.setConversationTables(convId, req);
     }
 
+    @PutMapping("/conversations/{convId}")
+    public ConversationResponse update(@PathVariable Long convId,
+                                       @RequestBody UpdateConversationRequest req,
+                                       Authentication auth) {
+        return conversationAppService.updateConversation(
+            convId, req, Long.valueOf(auth.getName()));
+    }
+
+    @DeleteMapping("/conversations/{convId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long convId, Authentication auth) {
+        conversationAppService.deleteConversation(
+            convId, Long.valueOf(auth.getName()));
+    }
+
     @GetMapping(value = "/conversations/{convId}/stream",
                 produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@PathVariable Long convId, Authentication auth) {

@@ -277,7 +277,11 @@ public class AgentDomainService {
                         "Use get_table_schema to understand column details. " +
                         "When planning how to combine tables, prefer the join keys given in `relations`. " +
                         "When you fully understand the requirements, call propose_schema " +
-                        "to propose the target table structure.";
+                        "to propose the target table structure. " +
+                        "IMPORTANT: If you have already proposed a schema and the user subsequently " +
+                        "requests changes (adding, removing, or modifying columns), you MUST call " +
+                        "propose_schema again with the updated target_table and columns — do not just " +
+                        "acknowledge the request in text.";
             case 3:
                 return base +
                         "The target table schema has been confirmed (shown in conversation history). " +

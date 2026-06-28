@@ -56,6 +56,7 @@ CREATE TABLE table_columns (
 CREATE TABLE conversations (
     id         BIGINT AUTO_INCREMENT PRIMARY KEY,
     project_id BIGINT NOT NULL,
+    conv_name  VARCHAR(256),
     state      INT NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

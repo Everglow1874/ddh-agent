@@ -7,5 +7,6 @@ import java.util.List;
 
 @Data
 public class CreateConversationRequest {
+    private String name;
     private List<Long> tableIds = Collections.emptyList();
 }

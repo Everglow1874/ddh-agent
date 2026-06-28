@@ -9,6 +9,7 @@ import java.util.List;
 public class ConversationResponse {
     private Long id;
     private Long projectId;
+    private String name;
     private Integer state;
     private LocalDateTime createdAt;
     private List<Long> tableIds;

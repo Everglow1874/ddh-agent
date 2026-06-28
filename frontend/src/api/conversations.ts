@@ -1,9 +1,18 @@
 import { client } from "./client";
 import type { Conversation, Message, SchemaColumn, EtlStepProposal, TableDetailOut } from "./types";
 
-export async function createConversation(projectId: number, tableIds: number[] = []): Promise<Conversation> {
-  const resp = await client.post<Conversation>(`/projects/${projectId}/conversations`, { table_ids: tableIds });
+export async function createConversation(projectId: number, tableIds: number[] = [], name?: string): Promise<Conversation> {
+  const resp = await client.post<Conversation>(`/projects/${projectId}/conversations`, { name, table_ids: tableIds });
   return resp.data;
+}
+
+export async function updateConversation(conversationId: number, name: string): Promise<Conversation> {
+  const resp = await client.put<Conversation>(`/conversations/${conversationId}`, { name });
+  return resp.data;
+}
+
+export async function deleteConversation(conversationId: number): Promise<void> {
+  await client.delete(`/conversations/${conversationId}`);
 }
 
 export async function getConversationTables(conversationId: number): Promise<TableDetailOut[]> {

@@ -37,9 +37,14 @@ public class ConversationAppService {
 
         Conversation conv = new Conversation();
         conv.setProjectId(projectId);
+        conv.setName(req.getName() != null ? req.getName() : "新对话");
         conv.setState(1);
         conv.setCreatedAt(LocalDateTime.now());
         conversationRepository.save(conv);
+        if (req.getName() == null) {
+            conv.setName("对话 #" + conv.getId());
+            conversationRepository.save(conv);
+        }
 
         List<Long> tableIds = req.getTableIds() != null ? req.getTableIds() : Collections.emptyList();
         if (!tableIds.isEmpty()) {
@@ -131,10 +136,32 @@ public class ConversationAppService {
         return assembler.toResponse(conv, tableIdsOf(convId));
     }
 
+    public ConversationResponse updateConversation(Long convId,
+                                                   UpdateConversationRequest req,
+                                                   Long ownerId) {
+        Conversation conv = requireOwnedConversation(convId, ownerId);
+        if (req.getName() != null) {
+            conv.setName(req.getName());
+        }
+        conversationRepository.save(conv);
+        return assembler.toResponse(conv, tableIdsOf(convId));
+    }
+
+    public void deleteConversation(Long convId, Long ownerId) {
+        requireOwnedConversation(convId, ownerId);
+        conversationRepository.deleteById(convId);
+    }
+
     public Conversation requireConversation(Long convId) {
         return conversationRepository.findById(convId)
             .orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Conversation not found"));
+    }
+
+    private Conversation requireOwnedConversation(Long convId, Long ownerId) {
+        Conversation conv = requireConversation(convId);
+        requireOwnedProject(conv.getProjectId(), ownerId);
+        return conv;
     }
 
     private void requireOwnedProject(Long projectId, Long ownerId) {

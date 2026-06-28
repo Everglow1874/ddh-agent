@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS table_columns (
 CREATE TABLE IF NOT EXISTS conversations (
     id         BIGINT AUTO_INCREMENT PRIMARY KEY               COMMENT '会话ID',
     project_id BIGINT NOT NULL                                 COMMENT '所属项目ID',
+    conv_name  VARCHAR(256)                                    COMMENT '会话名称',
     state      INT NOT NULL DEFAULT 1                          COMMENT '状态：1=信息收集 2=结构确认 3=步骤确认 4=生成中 5=完成',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP             COMMENT '创建时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会话表';

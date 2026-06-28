@@ -44,6 +44,7 @@ export interface Project {
 export interface Conversation {
   id: number;
   project_id: number;
+  name: string;
   state: number; // 1..5
   created_at: string;
   table_ids: number[];
@@ -165,6 +166,7 @@ export interface GraphEdge {
   target: string;
   relation_type: string;
   column_pairs: ColumnPair[];
+  relation_id?: number;
 }
 
 export interface LineageGraph {

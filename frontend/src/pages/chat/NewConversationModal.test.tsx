@@ -44,7 +44,7 @@ describe("NewConversationModal", () => {
 
   it("打开时加载源表列表", async () => {
     render(<NewConversationModal open onCancel={() => {}} onConfirm={() => {}} />);
-    await waitFor(() => expect(screen.getByText("新建对话 · 选择源表")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("新建对话")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText("成绩表")).toBeInTheDocument());
   });
 

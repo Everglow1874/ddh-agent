@@ -66,6 +66,17 @@ public class ConversationRepositoryImpl implements ConversationRepository {
     }
 
     @Override
+    public void deleteById(Long id) {
+        conversationTableMapper.delete(
+            new LambdaQueryWrapper<ConversationTable>()
+                .eq(ConversationTable::getConversationId, id));
+        messageMapper.delete(
+            new LambdaQueryWrapper<Message>()
+                .eq(Message::getConversationId, id));
+        conversationMapper.deleteById(id);
+    }
+
+    @Override
     public Message saveMessage(Message message) {
         messageMapper.insert(message);
         return message;

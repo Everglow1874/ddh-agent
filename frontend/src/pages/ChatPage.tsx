@@ -8,6 +8,10 @@ import {
   getMessages,
   confirmSchema,
   confirmSteps,
+  updateConversation,
+  deleteConversation,
+  getConversationTables,
+  setConversationTables,
 } from "../api/conversations";
 import { streamConversation } from "../api/sse";
 import { getConversationJob } from "../api/jobs";
@@ -17,7 +21,8 @@ import { SqlResultPanel, type GeneratedStep } from "./chat/SqlResultPanel";
 import { ConversationSidebar } from "./chat/ConversationSidebar";
 import { MarkdownMessage } from "./chat/MarkdownMessage";
 import { NewConversationModal } from "./chat/NewConversationModal";
-import type { Conversation, Message, SchemaColumn, EtlStepProposal, SSEEvent } from "../api/types";
+import type { Conversation, Message, SchemaColumn, EtlStepProposal, SSEEvent, TableDetailOut } from "../api/types";
+import { ConversationLineageModal } from "./chat/ConversationLineageModal";
 
 const { Sider, Content } = Layout;
 
@@ -41,6 +46,8 @@ export function ChatPage() {
   const [stepsProposal, setStepsProposal] = useState<EtlStepProposal[] | null>(null);
   const [generatedSteps, setGeneratedSteps] = useState<GeneratedStep[]>([]);
   const [jobId, setJobId] = useState<number | null>(null);
+  const [convTables, setConvTables] = useState<TableDetailOut[]>([]);
+  const [lineageOpen, setLineageOpen] = useState(false);
   const abortRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -60,6 +67,12 @@ export function ChatPage() {
     setStepsProposal(null);
     setGeneratedSteps([]);
     setJobId(null);
+    try {
+      const tables = await getConversationTables(cid);
+      setConvTables(tables);
+    } catch {
+      setConvTables([]);
+    }
     const msgs: Message[] = await getMessages(cid);
     setBubbles(
       msgs
@@ -76,15 +89,57 @@ export function ChatPage() {
 
   const onNewConversation = () => setNewModalOpen(true);
 
-  const handleCreateConversation = async (tableIds: number[]) => {
+  const handleCreateConversation = async (name: string, tableIds: number[]) => {
     setNewModalOpen(false);
     try {
-      const conv = await createConversation(projectId, tableIds);
-      const convs = await listConversations(projectId); // 重新拉取，修复"旧对话被覆盖"
+      const conv = await createConversation(projectId, tableIds, name || undefined);
+      const convs = await listConversations(projectId);
       setConversations(convs);
       selectConversation(conv.id);
     } catch {
       antdMessage.error("创建对话失败，请重试");
+    }
+  };
+
+  const handleSaveTables = async (tableIds: number[]) => {
+    if (activeId === null) return;
+    try {
+      await setConversationTables(activeId, tableIds);
+      antdMessage.success("表关联已更新");
+      const tables = await getConversationTables(activeId);
+      setConvTables(tables);
+    } catch {
+      antdMessage.error("保存失败");
+    }
+  };
+
+  const handleRenameConversation = async (convId: number, name: string) => {
+    try {
+      const updated = await updateConversation(convId, name);
+      setConversations((prev) => prev.map((c) => (c.id === convId ? updated : c)));
+    } catch {
+      antdMessage.error("重命名失败");
+    }
+  };
+
+  const handleDeleteConversation = async (convId: number) => {
+    try {
+      await deleteConversation(convId);
+      const convs = await listConversations(projectId);
+      setConversations(convs);
+      if (activeId === convId) {
+        if (convs.length > 0) {
+          selectConversation(convs[0].id);
+        } else {
+          setActiveId(null);
+          setBubbles([]);
+          setGeneratedSteps([]);
+          setJobId(null);
+          setConvTables([]);
+        }
+      }
+    } catch {
+      antdMessage.error("删除对话失败");
     }
   };
 
@@ -174,8 +229,8 @@ export function ChatPage() {
 
   return (
     <Layout style={{ height: "100vh" }}>
-      <Sider width={200} style={{ background: "#161622" }}>
-        <div style={{ padding: 8 }}>
+      <Sider width={200} style={{ background: "#161622", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "8px 8px 0" }}>
           <Button type="link" onClick={() => navigate(`/projects/${projectId}`)} style={{ color: "#fff" }}>← 返回项目</Button>
         </div>
         <ConversationSidebar
@@ -183,6 +238,10 @@ export function ChatPage() {
           activeId={activeId}
           onSelect={selectConversation}
           onNew={onNewConversation}
+          onRename={handleRenameConversation}
+          onDelete={handleDeleteConversation}
+          convTables={convTables}
+          onViewLineage={() => setLineageOpen(true)}
         />
       </Sider>
 
@@ -240,6 +299,13 @@ export function ChatPage() {
         open={newModalOpen}
         onCancel={() => setNewModalOpen(false)}
         onConfirm={handleCreateConversation}
+      />
+
+      <ConversationLineageModal
+        open={lineageOpen}
+        onClose={() => setLineageOpen(false)}
+        tableIds={convTables.map((t) => t.id)}
+        onSave={handleSaveTables}
       />
 
       <Sider width={320} style={{ background: "#fff", borderLeft: "1px solid #e8eef8", padding: 12 }}>

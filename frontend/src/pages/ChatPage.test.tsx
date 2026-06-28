@@ -4,7 +4,17 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { ChatPage } from "./ChatPage";
 import * as convApi from "../api/conversations";
 
-vi.mock("../api/conversations");
+vi.mock("../api/conversations", () => ({
+  createConversation: vi.fn(),
+  listConversations: vi.fn(),
+  sendChat: vi.fn(),
+  getMessages: vi.fn(),
+  getConversationTables: vi.fn().mockResolvedValue([]),
+  confirmSchema: vi.fn(),
+  confirmSteps: vi.fn(),
+  updateConversation: vi.fn(),
+  deleteConversation: vi.fn(),
+}));
 vi.mock("../api/sse");
 vi.mock("../api/jobs", () => ({
   getConversationJob: vi.fn().mockResolvedValue({ job_id: null, steps: [] }),
@@ -25,7 +35,7 @@ describe("ChatPage", () => {
 
   it("loads conversations on mount", async () => {
     vi.mocked(convApi.listConversations).mockResolvedValue([
-      { id: 7, project_id: 1, state: 1, created_at: "2026-05-31", table_ids: [] },
+      { id: 7, project_id: 1, name: "对话 #7", state: 1, created_at: "2026-05-31", table_ids: [] },
     ]);
     vi.mocked(convApi.getMessages).mockResolvedValue([]);
     renderChat();

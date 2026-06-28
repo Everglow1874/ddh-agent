@@ -13,4 +13,6 @@ public interface ConversationRepository {
 
     List<Message> findMessagesByConversationId(Long conversationId);
     Message saveMessage(Message message);
+
+    void deleteById(Long id);
 }
