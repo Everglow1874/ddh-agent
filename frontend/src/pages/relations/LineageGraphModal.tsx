@@ -1,14 +1,14 @@
-import { useEffect, useRef } from "react";
-import { Modal, Button, Space, message } from "antd";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { Modal, Button, Space, message, Select, Tag, Empty } from "antd";
 import { Graph } from "@antv/g6";
 import type { IElementEvent, ElementDatum } from "@antv/g6";
 import { lineageGraph } from "../../api/relations";
 import { RELATION_TYPE_LABELS } from "../../api/types";
-import type { LineageGraph, GraphNode } from "../../api/types";
+import type { LineageGraph, GraphNode, SourceTable } from "../../api/types";
 
 interface Props {
   open: boolean;
-  tableIds: number[];
+  tables: SourceTable[];
   onClose: () => void;
 }
 
@@ -24,19 +24,47 @@ function columnsHtml(node: GraphNode): string {
   }</div>${rows}</div>`;
 }
 
-export function LineageGraphModal({ open, tableIds, onClose }: Props) {
+export function LineageGraphModal({ open, tables, onClose }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<Graph | null>(null);
   const dataRef = useRef<LineageGraph | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [search, setSearch] = useState("");
+
+  const tableOptions = useMemo(() => tables.map((t) => ({
+    label: (
+      <Space size={4}>
+        <span>{t.name}</span>
+        <Tag color={t.scope === 1 ? "blue" : "green"} style={{ fontSize: 10, lineHeight: "16px", padding: "0 4px" }}>
+          {t.scope === 1 ? "公共" : "私有"}
+        </Tag>
+      </Space>
+    ),
+    value: t.id,
+    searchText: `${t.name} ${t.scope === 1 ? "公共" : "私有"} ${t.description ?? ""}`,
+  })), [tables]);
+
+  const displayOptions = useMemo(() => {
+    if (!search) return tableOptions.slice(0, 10);
+    const q = search.toLowerCase();
+    return tableOptions.filter((o) => o.searchText.toLowerCase().includes(q));
+  }, [tableOptions, search]);
 
   useEffect(() => {
-    if (!open || !containerRef.current) return;
+    if (open) {
+      setSelectedIds([]);
+      setSearch("");
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !containerRef.current || selectedIds.length === 0) return;
     let disposed = false;
 
     const render = async () => {
       let data: LineageGraph;
       try {
-        data = await lineageGraph(tableIds);
+        data = await lineageGraph(selectedIds);
       } catch {
         message.error("获取血缘图失败");
         return;
@@ -114,7 +142,7 @@ export function LineageGraphModal({ open, tableIds, onClose }: Props) {
       graphRef.current?.destroy();
       graphRef.current = null;
     };
-  }, [open, tableIds]);
+  }, [open, selectedIds]);
 
   const handleExportImage = async () => {
     if (!graphRef.current) return;
@@ -150,13 +178,41 @@ export function LineageGraphModal({ open, tableIds, onClose }: Props) {
       style={{ top: 24 }}
       styles={{ body: { padding: 0 } }}
     >
-      <div style={{ padding: "8px 16px", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ padding: "8px 16px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 13, color: "#666", whiteSpace: "nowrap" }}>选择表：</span>
+        <Select
+          mode="multiple"
+          style={{ minWidth: 320, maxWidth: 500 }}
+          placeholder="搜索并选择表（显示前10条，搜索展开更多）"
+          value={selectedIds}
+          onChange={setSelectedIds}
+          showSearch
+          filterOption={false}
+          onSearch={setSearch}
+          onDropdownVisibleChange={(visible) => { if (!visible) setSearch(""); }}
+          notFoundContent={search ? "未找到匹配的表" : "暂无数据"}
+          options={displayOptions}
+          tagRender={(props) => {
+            const t = tables.find((x) => x.id === props.value);
+            return (
+              <Tag closable={props.closable} onClose={props.onClose} color={t?.scope === 1 ? "blue" : "green"} style={{ marginRight: 3 }}>
+                {props.label}
+              </Tag>
+            );
+          }}
+        />
         <Space>
-          <Button size="small" onClick={handleExportImage}>导出图片</Button>
-          <Button size="small" onClick={handleExportJson}>导出 JSON</Button>
+          <Button size="small" disabled={selectedIds.length === 0} onClick={handleExportImage}>导出图片</Button>
+          <Button size="small" disabled={selectedIds.length === 0} onClick={handleExportJson}>导出 JSON</Button>
         </Space>
       </div>
-      <div ref={containerRef} style={{ width: "100%", height: "70vh" }} />
+      {selectedIds.length === 0 ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "70vh" }}>
+          <Empty description="请在上方选择至少一个表" />
+        </div>
+      ) : (
+        <div ref={containerRef} style={{ width: "100%", height: "70vh" }} />
+      )}
     </Modal>
   );
 }

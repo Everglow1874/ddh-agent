@@ -1,6 +1,8 @@
 package com.ddh.agent.infrastructure.persistence.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ddh.agent.domain.model.relation.RelationRepository;
 import com.ddh.agent.domain.model.relation.TableRelation;
 import com.ddh.agent.domain.model.relation.TableRelationColumn;
@@ -8,6 +10,7 @@ import com.ddh.agent.infrastructure.persistence.mapper.TableRelationColumnMapper
 import com.ddh.agent.infrastructure.persistence.mapper.TableRelationMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -79,5 +82,15 @@ public class RelationRepositoryImpl implements RelationRepository {
         relationColumnMapper.delete(
             new LambdaQueryWrapper<TableRelationColumn>()
                 .eq(TableRelationColumn::getRelationId, relationId));
+    }
+
+    @Override
+    public IPage<TableRelation> findPage(int page, int size, String search) {
+        LambdaQueryWrapper<TableRelation> wrapper = new LambdaQueryWrapper<TableRelation>()
+                .orderByDesc(TableRelation::getCreatedAt);
+        if (StringUtils.hasText(search)) {
+            wrapper.like(TableRelation::getDescription, search);
+        }
+        return relationMapper.selectPage(new Page<>(page, size), wrapper);
     }
 }

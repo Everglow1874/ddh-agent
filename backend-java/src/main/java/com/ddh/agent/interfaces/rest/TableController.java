@@ -2,6 +2,8 @@
 package com.ddh.agent.interfaces.rest;
 
 import com.ddh.agent.application.service.TableAppService;
+import com.ddh.agent.interfaces.dto.request.ColumnCreateRequest;
+import com.ddh.agent.interfaces.dto.request.ColumnUpdateRequest;
 import com.ddh.agent.interfaces.dto.request.TableUpdateRequest;
 import com.ddh.agent.interfaces.dto.response.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,16 @@ public class TableController {
         return tableAppService.listTables(scope, Long.valueOf(auth.getName()));
     }
 
+    @GetMapping("/page")
+    public PageResponse<TableResponse> listTablesPage(
+            @RequestParam(required = false, defaultValue = "") String search,
+            @RequestParam(required = false) String scope,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            Authentication auth) {
+        return tableAppService.listTablesPage(search, scope, Long.valueOf(auth.getName()), page, size);
+    }
+
     @GetMapping("/{tableId}")
     public TableDetailResponse getTable(@PathVariable Long tableId) {
         return tableAppService.getTable(tableId);
@@ -44,6 +56,24 @@ public class TableController {
     public TableResponse updateTable(@PathVariable Long tableId,
                                      @RequestBody TableUpdateRequest req) {
         return tableAppService.updateTable(tableId, req);
+    }
+
+    @PostMapping("/{tableId}/columns")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void addColumn(@PathVariable Long tableId, @RequestBody ColumnCreateRequest req) {
+        tableAppService.addColumn(tableId, req);
+    }
+
+    @PutMapping("/{tableId}/columns/{columnId}")
+    public void updateColumn(@PathVariable Long tableId, @PathVariable Long columnId,
+                             @RequestBody ColumnUpdateRequest req) {
+        tableAppService.updateColumn(tableId, columnId, req);
+    }
+
+    @DeleteMapping("/{tableId}/columns/{columnId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteColumn(@PathVariable Long tableId, @PathVariable Long columnId) {
+        tableAppService.deleteColumn(tableId, columnId);
     }
 
     @DeleteMapping("/{tableId}")

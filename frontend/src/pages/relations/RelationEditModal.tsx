@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Modal, Form, Select, Input, Space, Button, message } from "antd";
+import { useState, useEffect, useMemo } from "react";
+import { Modal, Form, Select, Input, Space, Button, message, Tag } from "antd";
 import { getTable } from "../../api/tables";
 import { createRelation, updateRelation } from "../../api/relations";
 import { RELATION_TYPE_LABELS } from "../../api/types";
@@ -26,9 +26,50 @@ export function RelationEditModal({ open, tables, editing, onClose, onSaved }: P
   const [pairs, setPairs] = useState<PairForm[]>([{}]);
   const [sourceCols, setSourceCols] = useState<TableColumn[]>([]);
   const [targetCols, setTargetCols] = useState<TableColumn[]>([]);
+  const [sourceSearch, setSourceSearch] = useState("");
+  const [targetSearch, setTargetSearch] = useState("");
+
+  const tableOptions = useMemo(() => tables.map((t) => ({
+    label: (
+      <Space size={4}>
+        <span>{t.name}</span>
+        <Tag color={t.scope === 1 ? "blue" : "green"} style={{ fontSize: 10, lineHeight: "16px", padding: "0 4px" }}>
+          {t.scope === 1 ? "公共" : "私有"}
+        </Tag>
+      </Space>
+    ),
+    value: t.id,
+    searchText: `${t.name} ${t.scope === 1 ? "公共" : "私有"} ${t.description ?? ""}`,
+  })), [tables]);
+
+  const sourcePool = useMemo(
+    () => tableOptions.filter((o) => o.value !== targetTableId),
+    [tableOptions, targetTableId],
+  );
+
+  const targetPool = useMemo(
+    () => tableOptions.filter((o) => o.value !== sourceTableId),
+    [tableOptions, sourceTableId],
+  );
+
+  const sourceDisplayOptions = useMemo(() => {
+    if (!sourceSearch) return sourcePool.slice(0, 10);
+    const q = sourceSearch.toLowerCase();
+    return sourcePool.filter((o) => o.searchText.toLowerCase().includes(q));
+  }, [sourcePool, sourceSearch]);
+
+  const targetDisplayOptions = useMemo(() => {
+    if (!targetSearch) return targetPool.slice(0, 10);
+    const q = targetSearch.toLowerCase();
+    return targetPool.filter((o) => o.searchText.toLowerCase().includes(q));
+  }, [targetPool, targetSearch]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setSourceSearch("");
+      setTargetSearch("");
+      return;
+    }
     if (editing) {
       setSourceTableId(editing.source_table_id);
       setTargetTableId(editing.target_table_id);
@@ -111,20 +152,26 @@ export function RelationEditModal({ open, tables, editing, onClose, onSaved }: P
             <Select
               style={{ width: 180 }}
               value={sourceTableId}
-              onChange={handleSource}
+              onChange={(id) => { setSourceSearch(""); handleSource(id); }}
               showSearch
-              optionFilterProp="label"
-              options={tables.map((t) => ({ label: t.name, value: t.id }))}
+              filterOption={false}
+              onSearch={setSourceSearch}
+              onDropdownVisibleChange={(visible) => { if (!visible) setSourceSearch(""); }}
+              notFoundContent={sourceSearch ? "未找到匹配的表" : "暂无数据"}
+              options={sourceDisplayOptions}
             />
           </Form.Item>
           <Form.Item label="关联表(多/目标侧)">
             <Select
               style={{ width: 180 }}
               value={targetTableId}
-              onChange={handleTarget}
+              onChange={(id) => { setTargetSearch(""); handleTarget(id); }}
               showSearch
-              optionFilterProp="label"
-              options={tables.map((t) => ({ label: t.name, value: t.id }))}
+              filterOption={false}
+              onSearch={setTargetSearch}
+              onDropdownVisibleChange={(visible) => { if (!visible) setTargetSearch(""); }}
+              notFoundContent={targetSearch ? "未找到匹配的表" : "暂无数据"}
+              options={targetDisplayOptions}
             />
           </Form.Item>
           <Form.Item label="关系类型">

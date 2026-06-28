@@ -1,6 +1,9 @@
 package com.ddh.agent.application.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ddh.agent.domain.model.table.*;
+import com.ddh.agent.interfaces.dto.request.ColumnCreateRequest;
+import com.ddh.agent.interfaces.dto.request.ColumnUpdateRequest;
 import com.ddh.agent.interfaces.dto.request.TableUpdateRequest;
 import com.ddh.agent.interfaces.dto.response.*;
 import com.ddh.agent.application.assembler.TableAssembler;
@@ -98,6 +101,13 @@ public class TableAppService {
             .collect(Collectors.toList());
     }
 
+    public PageResponse<TableResponse> listTablesPage(String search, String scope, Long currentUserId, int page, int size) {
+        Integer scopeVal = "public".equals(scope) ? 1 : "private".equals(scope) ? 2 : null;
+        IPage<SourceTable> p = sourceTableRepository.findPageable(search, scopeVal, currentUserId, page, size);
+        return PageResponse.of(p,
+            p.getRecords().stream().map(assembler::toResponse).collect(Collectors.toList()));
+    }
+
     public TableDetailResponse getTable(Long tableId) {
         SourceTable table = sourceTableRepository.findById(tableId)
             .orElseThrow(() -> new ResponseStatusException(
@@ -114,6 +124,46 @@ public class TableAppService {
         if (req.getDescription() != null) table.setDescription(req.getDescription());
         sourceTableRepository.save(table);
         return assembler.toResponse(table);
+    }
+
+    public void addColumn(Long tableId, ColumnCreateRequest req) {
+        sourceTableRepository.findById(tableId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Table not found"));
+        List<TableColumn> existing = sourceTableRepository.findColumnsByTableId(tableId);
+        int nextOrder = existing.stream().mapToInt(TableColumn::getSortOrder).max().orElse(-1) + 1;
+        TableColumn col = new TableColumn();
+        col.setTableId(tableId);
+        col.setColumnName(req.getColumnName());
+        col.setDataType(req.getDataType());
+        col.setComment(req.getComment());
+        col.setSortOrder(nextOrder);
+        sourceTableRepository.saveColumn(col);
+    }
+
+    public void updateColumn(Long tableId, Long columnId, ColumnUpdateRequest req) {
+        sourceTableRepository.findById(tableId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Table not found"));
+        TableColumn col = sourceTableRepository.findColumnById(columnId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Column not found"));
+        if (!tableId.equals(col.getTableId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Column does not belong to this table");
+        }
+        if (req.getColumnName() != null) col.setColumnName(req.getColumnName());
+        if (req.getDataType() != null) col.setDataType(req.getDataType());
+        if (req.getComment() != null) col.setComment(req.getComment());
+        if (req.getSortOrder() != null) col.setSortOrder(req.getSortOrder());
+        sourceTableRepository.updateColumn(col);
+    }
+
+    public void deleteColumn(Long tableId, Long columnId) {
+        sourceTableRepository.findById(tableId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Table not found"));
+        TableColumn col = sourceTableRepository.findColumnById(columnId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Column not found"));
+        if (!tableId.equals(col.getTableId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Column does not belong to this table");
+        }
+        sourceTableRepository.deleteColumnById(columnId);
     }
 
     public void deleteTable(Long tableId) {

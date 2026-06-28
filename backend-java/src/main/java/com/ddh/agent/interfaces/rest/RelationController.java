@@ -3,6 +3,7 @@ package com.ddh.agent.interfaces.rest;
 import com.ddh.agent.application.service.RelationAppService;
 import com.ddh.agent.interfaces.dto.request.RelationSaveRequest;
 import com.ddh.agent.interfaces.dto.response.LineageGraphResponse;
+import com.ddh.agent.interfaces.dto.response.PageResponse;
 import com.ddh.agent.interfaces.dto.response.RelationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,15 @@ public class RelationController {
     @GetMapping("/relations")
     public List<RelationResponse> list(Authentication auth) {
         return relationAppService.list(Long.valueOf(auth.getName()));
+    }
+
+    @GetMapping("/relations/page")
+    public PageResponse<RelationResponse> listPage(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "") String search,
+            Authentication auth) {
+        return relationAppService.listPage(Long.valueOf(auth.getName()), page, size, search);
     }
 
     @PostMapping("/relations")

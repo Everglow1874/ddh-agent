@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Table, Button, Space, Tag, Popconfirm, Checkbox, message } from "antd";
+import { Table, Button, Space, Tag, Popconfirm, message } from "antd";
 import { listTables } from "../../api/tables";
 import { listRelations, deleteRelation } from "../../api/relations";
 import { RELATION_TYPE_LABELS } from "../../api/types";
@@ -13,7 +13,6 @@ export function RelationsPage() {
   const [loading, setLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Relation | null>(null);
-  const [checked, setChecked] = useState<number[]>([]);
   const [graphOpen, setGraphOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -110,18 +109,10 @@ export function RelationsPage() {
         >
           + 新建关系
         </Button>
-        <Button disabled={checked.length < 1} onClick={() => setGraphOpen(true)}>
-          展示血缘图(已选 {checked.length})
+        <Button onClick={() => setGraphOpen(true)}>
+          展示血缘图
         </Button>
       </Space>
-
-      <div style={{ marginBottom: 8 }}>
-        <Checkbox.Group
-          value={checked}
-          onChange={(v) => setChecked(v as number[])}
-          options={tables.map((t) => ({ label: t.name, value: t.id }))}
-        />
-      </div>
 
       <Table dataSource={relations} columns={columns} rowKey="id" size="small" loading={loading} pagination={false} />
 
@@ -132,7 +123,7 @@ export function RelationsPage() {
         onClose={() => setEditOpen(false)}
         onSaved={load}
       />
-      <LineageGraphModal open={graphOpen} tableIds={checked} onClose={() => setGraphOpen(false)} />
+      <LineageGraphModal open={graphOpen} tables={tables} onClose={() => setGraphOpen(false)} />
     </div>
   );
 }

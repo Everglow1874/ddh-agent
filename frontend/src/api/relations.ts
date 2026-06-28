@@ -1,8 +1,19 @@
 import { client } from "./client";
-import type { Relation, RelationSave, LineageGraph } from "./types";
+import type { Relation, RelationSave, LineageGraph, PageResponse } from "./types";
 
 export async function listRelations(): Promise<Relation[]> {
   const resp = await client.get<Relation[]>("/relations");
+  return resp.data;
+}
+
+export async function listRelationsPage(
+  page = 1,
+  size = 20,
+  search = "",
+): Promise<PageResponse<Relation>> {
+  const resp = await client.get<PageResponse<Relation>>("/relations/page", {
+    params: { page, size, search },
+  });
   return resp.data;
 }
 

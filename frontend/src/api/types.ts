@@ -172,6 +172,13 @@ export interface LineageGraph {
   edges: GraphEdge[];
 }
 
+export interface PageResponse<T> {
+  content: T[];
+  total: number;
+  page: number;
+  size: number;
+}
+
 export const RELATION_TYPE_LABELS: Record<string, string> = {
   ONE_TO_ONE: "一对一",
   ONE_TO_MANY: "一对多",

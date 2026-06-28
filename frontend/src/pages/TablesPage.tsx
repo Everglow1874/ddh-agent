@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { Table, Button, Segmented, Upload, Modal, Form, Input, message, Space, Popconfirm, Tag, Checkbox } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { Table, Button, Segmented, Upload, Modal, Form, Input, message, Space, Popconfirm, Tag, Drawer } from "antd";
+import { UploadOutlined, SearchOutlined } from "@ant-design/icons";
 import type { UploadFile } from "antd";
-import { listTables, importTable, deleteTable } from "../api/tables";
-import { listRelations, deleteRelation } from "../api/relations";
+import { listTables, listTablesPage, importTable, deleteTable, getTable, updateTable, addColumn, updateColumn, deleteColumn } from "../api/tables";
+import { listRelationsPage, deleteRelation } from "../api/relations";
 import { RELATION_TYPE_LABELS } from "../api/types";
-import type { SourceTable, Relation } from "../api/types";
+import type { SourceTable, Relation, TableDetail, TableColumn } from "../api/types";
 import { RelationEditModal } from "./relations/RelationEditModal";
 import { LineageGraphModal } from "./relations/LineageGraphModal";
 
@@ -19,16 +19,34 @@ export function TablesPage() {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [form] = Form.useForm();
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState("");
+
   const [relations, setRelations] = useState<Relation[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Relation | null>(null);
-  const [checked, setChecked] = useState<number[]>([]);
   const [graphOpen, setGraphOpen] = useState(false);
+
+  const [viewDrawerOpen, setViewDrawerOpen] = useState(false);
+  const [viewTable, setViewTable] = useState<TableDetail | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
+
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [updateForm] = Form.useForm();
+  const [updatingTable, setUpdatingTable] = useState<SourceTable | null>(null);
+
+  const [columnModalOpen, setColumnModalOpen] = useState(false);
+  const [editingColumn, setEditingColumn] = useState<TableColumn | null>(null);
+  const [columnForm] = Form.useForm();
 
   const loadTables = async () => {
     setLoading(true);
     try {
-      setTables(await listTables(scope as "public" | "private"));
+      const resp = await listTablesPage(scope as "public" | "private", search, page, pageSize);
+      setTables(resp.content);
+      setTotal(resp.total);
     } finally {
       setLoading(false);
     }
@@ -37,13 +55,17 @@ export function TablesPage() {
   const loadRelations = useCallback(async () => {
     setLoading(true);
     try {
-      const [rel, tbs] = await Promise.all([listRelations(), listTables("all")]);
-      setRelations(rel);
+      const [relPage, tbs] = await Promise.all([
+        listRelationsPage(page, pageSize, search),
+        listTables("all"),
+      ]);
+      setRelations(relPage.content);
+      setTotal(relPage.total);
       setTables(tbs);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, pageSize, search]);
 
   useEffect(() => {
     if (scope === "relations") {
@@ -51,8 +73,11 @@ export function TablesPage() {
     } else {
       loadTables();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, loadRelations]);
+  }, [scope, page, pageSize, search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [scope, search]);
 
   const onImport = async (values: { description?: string }) => {
     const file = fileList[0]?.originFileObj;
@@ -66,7 +91,7 @@ export function TablesPage() {
       setImportOpen(false);
       setFileList([]);
       form.resetFields();
-      load();
+      loadTables();
     } catch (e: unknown) {
       const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       message.error(detail ?? "导入失败");
@@ -85,16 +110,88 @@ export function TablesPage() {
     loadRelations();
   };
 
+  const onView = async (id: number) => {
+    setViewLoading(true);
+    setViewDrawerOpen(true);
+    try {
+      setViewTable(await getTable(id));
+    } catch {
+      message.error("获取详情失败");
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  const onUpdateOpen = (record: SourceTable) => {
+    setUpdatingTable(record);
+    updateForm.setFieldsValue({ name: record.name, description: record.description ?? "" });
+    setUpdateOpen(true);
+  };
+
+  const onUpdateSave = async (values: { name: string; description: string }) => {
+    if (!updatingTable) return;
+    try {
+      await updateTable(updatingTable.id, values);
+      message.success("更新成功");
+      setUpdateOpen(false);
+      setUpdatingTable(null);
+      loadTables();
+    } catch {
+      message.error("更新失败");
+    }
+  };
+
+  const onColumnAdd = () => {
+    setEditingColumn(null);
+    columnForm.resetFields();
+    setColumnModalOpen(true);
+  };
+
+  const onColumnEdit = (col: TableColumn) => {
+    setEditingColumn(col);
+    columnForm.setFieldsValue(col);
+    setColumnModalOpen(true);
+  };
+
+  const onColumnDelete = async (col: TableColumn) => {
+    if (!viewTable) return;
+    await deleteColumn(viewTable.id, col.id);
+    message.success("字段已删除");
+    const detail = await getTable(viewTable.id);
+    setViewTable(detail);
+  };
+
+  const onColumnSave = async (values: { column_name: string; data_type: string; comment?: string }) => {
+    if (!viewTable) return;
+    const tid = viewTable.id;
+    if (editingColumn) {
+      await updateColumn(tid, editingColumn.id, values);
+      message.success("字段已更新");
+    } else {
+      await addColumn(tid, values);
+      message.success("字段已添加");
+    }
+    setColumnModalOpen(false);
+    setEditingColumn(null);
+    const detail = await getTable(tid);
+    setViewTable(detail);
+  };
+
   const tableColumns = [
     { title: "表名", dataIndex: "name", key: "name" },
     { title: "描述", dataIndex: "description", key: "description", render: (v: string | null) => v ?? "-" },
     {
       title: "操作",
       key: "action",
+      width: 200,
       render: (_: unknown, record: SourceTable) => (
-        <Popconfirm title="确认删除该表？" onConfirm={() => onDelete(record.id)}>
-          <Button type="link" danger>删除</Button>
-        </Popconfirm>
+        <Space>
+          <Button type="link" size="small" onClick={() => onView(record.id)}>查看</Button>
+          <Button type="link" size="small" onClick={() => onUpdateOpen(record)}>编辑</Button>
+          <Popconfirm title="确认删除该表？" onConfirm={() => onDelete(record.id)}>
+            <Button type="link" size="small" danger>删除</Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -173,15 +270,34 @@ export function TablesPage() {
           ]}
         />
         {scope !== "relations" && (
-          <Button type="primary" onClick={() => setImportOpen(true)}>+ 导入 CSV</Button>
+          <Space>
+            <Input
+              placeholder="搜索表名/描述..."
+              prefix={<SearchOutlined />}
+              allowClear
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: 220 }}
+            />
+            <Button type="primary" onClick={() => setImportOpen(true)}>+ 导入 CSV</Button>
+          </Space>
         )}
         {scope === "relations" && (
           <Space>
-            <Button
-              disabled={checked.length < 1}
-              onClick={() => setGraphOpen(true)}
-            >
-              展示血缘图(已选 {checked.length})
+            <Input
+              placeholder="搜索关系..."
+              prefix={<SearchOutlined />}
+              allowClear
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: 220 }}
+            />
+          </Space>
+        )}
+        {scope === "relations" && (
+          <Space>
+            <Button onClick={() => setGraphOpen(true)}>
+              展示血缘图
             </Button>
             <Button
               type="primary"
@@ -196,21 +312,22 @@ export function TablesPage() {
         )}
       </Space>
 
-      {scope === "relations" && (
-        <div style={{ marginBottom: 8 }}>
-          <Checkbox.Group
-            value={checked}
-            onChange={(v) => setChecked(v as number[])}
-            options={tables.map((t) => ({ label: t.name, value: t.id }))}
-          />
-        </div>
-      )}
-
       <Table
         rowKey="id"
         loading={loading}
-        dataSource={scope === "relations" ? relations : tables}
-        columns={scope === "relations" ? relationColumns : tableColumns}
+        dataSource={(scope === "relations" ? relations : tables) as any}
+        columns={(scope === "relations" ? relationColumns : tableColumns) as any}
+        pagination={{
+          current: page,
+          pageSize,
+          total,
+          onChange: (p, ps) => {
+            setPage(p);
+            if (ps !== pageSize) setPageSize(ps);
+          },
+          showSizeChanger: true,
+          showTotal: (t) => `共 ${t} 条`,
+        }}
       />
 
       {scope !== "relations" && (
@@ -233,6 +350,80 @@ export function TablesPage() {
         </Modal>
       )}
 
+      <Drawer
+        title={viewTable ? `${viewTable.name} - 字段列表` : "表详情"}
+        open={viewDrawerOpen}
+        onClose={() => setViewDrawerOpen(false)}
+        width={580}
+        loading={viewLoading}
+      >
+        {viewTable && (
+          <div>
+            <p><b>描述：</b>{viewTable.description ?? "-"}</p>
+            <Space style={{ marginBottom: 8 }}>
+              <Button type="primary" size="small" onClick={onColumnAdd}>+ 添加字段</Button>
+            </Space>
+            <Table
+              dataSource={viewTable.columns}
+              rowKey="id"
+              size="small"
+              pagination={false}
+              columns={[
+                { title: "字段名", dataIndex: "column_name", key: "column_name" },
+                { title: "类型", dataIndex: "data_type", key: "data_type" },
+                { title: "注释", dataIndex: "comment", key: "comment", render: (v: string | null) => v ?? "-" },
+                {
+                  title: "操作", key: "action", width: 120,
+                  render: (_: unknown, col: TableColumn) => (
+                    <Space>
+                      <Button type="link" size="small" onClick={() => onColumnEdit(col)}>编辑</Button>
+                      <Popconfirm title="确认删除该字段？" onConfirm={() => onColumnDelete(col)}>
+                        <Button type="link" size="small" danger>删除</Button>
+                      </Popconfirm>
+                    </Space>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        )}
+      </Drawer>
+
+      <Modal
+        title={editingColumn ? "编辑字段" : "添加字段"}
+        open={columnModalOpen}
+        onCancel={() => { setColumnModalOpen(false); setEditingColumn(null); }}
+        onOk={() => columnForm.submit()}
+      >
+        <Form form={columnForm} onFinish={onColumnSave} layout="vertical">
+          <Form.Item name="column_name" label="字段名" rules={[{ required: true, message: "请输入字段名" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="data_type" label="类型" rules={[{ required: true, message: "请输入数据类型" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="comment" label="注释">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="编辑表信息"
+        open={updateOpen}
+        onCancel={() => { setUpdateOpen(false); setUpdatingTable(null); }}
+        onOk={() => updateForm.submit()}
+      >
+        <Form form={updateForm} onFinish={onUpdateSave} layout="vertical">
+          <Form.Item name="name" label="表名" rules={[{ required: true, message: "请输入表名" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="description" label="描述">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
       <RelationEditModal
         open={editOpen}
         tables={tables}
@@ -240,7 +431,7 @@ export function TablesPage() {
         onClose={() => setEditOpen(false)}
         onSaved={loadRelations}
       />
-      <LineageGraphModal open={graphOpen} tableIds={checked} onClose={() => setGraphOpen(false)} />
+      <LineageGraphModal open={graphOpen} tables={tables} onClose={() => setGraphOpen(false)} />
     </div>
   );
 }

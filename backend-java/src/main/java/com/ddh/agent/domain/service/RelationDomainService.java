@@ -1,5 +1,6 @@
 package com.ddh.agent.domain.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ddh.agent.domain.model.relation.RelationRepository;
 import com.ddh.agent.domain.model.relation.TableRelation;
 import com.ddh.agent.domain.model.relation.TableRelationColumn;
@@ -13,6 +14,7 @@ import com.ddh.agent.interfaces.dto.response.GraphColumnResponse;
 import com.ddh.agent.interfaces.dto.response.GraphEdgeResponse;
 import com.ddh.agent.interfaces.dto.response.GraphNodeResponse;
 import com.ddh.agent.interfaces.dto.response.LineageGraphResponse;
+import com.ddh.agent.interfaces.dto.response.PageResponse;
 import com.ddh.agent.interfaces.dto.response.RelationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -88,6 +90,49 @@ public class RelationDomainService {
             result.add(vo);
         }
         return result;
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<RelationResponse> listRelationsPage(Long currentUserId, int page, int size, String search) {
+        IPage<TableRelation> p = relationRepository.findPage(page, size, search);
+        if (p.getRecords().isEmpty()) {
+            return PageResponse.of(p, Collections.emptyList());
+        }
+        Map<Long, SourceTable> tableMap = loadTables(p.getRecords());
+        List<TableRelation> visible = p.getRecords().stream()
+                .filter(r -> isVisible(tableMap.get(r.getSourceTableId()), currentUserId)
+                          && isVisible(tableMap.get(r.getTargetTableId()), currentUserId))
+                .collect(Collectors.toList());
+        if (visible.isEmpty()) {
+            return PageResponse.of(p, Collections.emptyList());
+        }
+
+        List<Long> relationIds = visible.stream().map(TableRelation::getId).collect(Collectors.toList());
+        List<TableRelationColumn> pairs = relationRepository.findColumnsByRelationIds(relationIds);
+        Map<Long, List<TableRelationColumn>> pairsByRelation = pairs.stream()
+                .collect(Collectors.groupingBy(TableRelationColumn::getRelationId));
+
+        Set<Long> involvedTables = new HashSet<>();
+        visible.forEach(r -> { involvedTables.add(r.getSourceTableId()); involvedTables.add(r.getTargetTableId()); });
+        Map<Long, TableColumn> columnMap = loadColumnsForTables(involvedTables);
+
+        List<RelationResponse> result = new ArrayList<>();
+        for (TableRelation r : visible) {
+            RelationResponse vo = new RelationResponse();
+            vo.setId(r.getId());
+            vo.setSourceTableId(r.getSourceTableId());
+            vo.setTargetTableId(r.getTargetTableId());
+            vo.setRelationType(r.getRelationType());
+            vo.setDescription(r.getDescription());
+            SourceTable src = tableMap.get(r.getSourceTableId());
+            SourceTable tgt = tableMap.get(r.getTargetTableId());
+            if (src != null) { vo.setSourceTableName(src.getName()); vo.setSourceTableComment(src.getDescription()); }
+            if (tgt != null) { vo.setTargetTableName(tgt.getName()); vo.setTargetTableComment(tgt.getDescription()); }
+            vo.setColumnPairs(toPairResponses(
+                    pairsByRelation.getOrDefault(r.getId(), Collections.emptyList()), columnMap));
+            result.add(vo);
+        }
+        return PageResponse.of(p, result);
     }
 
     // ========== 增删改 ==========
