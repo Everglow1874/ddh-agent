@@ -10,4 +10,5 @@ public class GraphEdgeResponse {
     private String target;
     private String relationType;
     private List<ColumnPairResponse> columnPairs;
+    private Long relationId;
 }

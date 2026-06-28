@@ -275,6 +275,7 @@ public class RelationDomainService {
                 edge.setSource("t_" + r.getSourceTableId());
                 edge.setTarget("t_" + r.getTargetTableId());
                 edge.setRelationType(r.getRelationType());
+                edge.setRelationId(r.getId());
                 edge.setColumnPairs(toPairResponses(
                         pairsByRelation.getOrDefault(r.getId(), Collections.emptyList()), columnMap));
                 graph.getEdges().add(edge);
