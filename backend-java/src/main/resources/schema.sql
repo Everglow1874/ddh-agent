@@ -84,3 +84,21 @@ CREATE TABLE IF NOT EXISTS etl_steps (
     is_temp_table SMALLINT DEFAULT 0                           COMMENT '是否临时表：0=最终表 1=临时表',
     sql_file_path VARCHAR(512)                                 COMMENT 'SQL文件路径'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ETL步骤表';
+
+CREATE TABLE IF NOT EXISTS table_relation (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY      COMMENT '主键ID',
+    source_table_id BIGINT NOT NULL                        COMMENT '主表(source_tables.id)',
+    target_table_id BIGINT NOT NULL                        COMMENT '关联表(source_tables.id)',
+    relation_type   VARCHAR(32)                            COMMENT 'ONE_TO_ONE/ONE_TO_MANY/MANY_TO_ONE/MANY_TO_MANY',
+    description     TEXT                                   COMMENT '关系说明',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP    COMMENT '创建时间',
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='原表关系';
+
+CREATE TABLE IF NOT EXISTS table_relation_column (
+    id               BIGINT AUTO_INCREMENT PRIMARY KEY     COMMENT '主键ID',
+    relation_id      BIGINT NOT NULL                       COMMENT 'table_relation.id',
+    source_column_id BIGINT                                COMMENT '主表字段(table_columns.id)',
+    target_column_id BIGINT                                COMMENT '关联表字段(table_columns.id)',
+    sort_order       INT DEFAULT 0                          COMMENT '排序'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='表关系字段对(支持复合键)';

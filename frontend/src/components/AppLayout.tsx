@@ -14,6 +14,8 @@ export function AppLayout() {
     ? "/projects"
     : location.pathname.startsWith("/tables")
     ? "/tables"
+    : location.pathname.startsWith("/relations")
+    ? "/relations"
     : location.pathname.startsWith("/admin")
     ? "/admin/config"
     : "";
@@ -29,6 +31,7 @@ export function AppLayout() {
           onClick={(e) => navigate(e.key)}
           items={[
             { key: "/tables", label: "原表仓库" },
+            { key: "/relations", label: "表关系" },
             { key: "/projects", label: "我的项目" },
             { key: "/admin/config", label: "系统配置" },
           ]}

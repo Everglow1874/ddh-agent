@@ -28,6 +28,8 @@ public class AgentDomainService {
     private SourceTableRepository sourceTableRepository;
     @Autowired
     private EtlDomainService etlDomainService;
+    @Autowired
+    private RelationDomainService relationDomainService;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -150,7 +152,15 @@ public class AgentDomainService {
                     m.put("scope", t.get().getScope());
                     return m;
                 }).filter(Objects::nonNull).collect(Collectors.toList());
-                return map("tables", tables);
+                Map<String, Object> result = new HashMap<>();
+                result.put("tables", tables);
+                List<Long> tableIds = rows.stream()
+                        .map(ConversationTable::getTableId).collect(Collectors.toList());
+                String relationText = relationDomainService.buildRelationTextForTables(tableIds);
+                if (relationText != null && !relationText.isEmpty()) {
+                    result.put("relations", relationText);
+                }
+                return result;
             }
 
             case "get_table_schema": {
@@ -261,8 +271,11 @@ public class AgentDomainService {
             case 1:
                 return base +
                         "Your task: analyze the user's ETL requirements. " +
-                        "Use list_project_tables to see available source tables, " +
-                        "use get_table_schema to understand column details. " +
+                        "Use list_project_tables to see available source tables; its result also " +
+                        "includes a `relations` section describing predefined relationships between " +
+                        "these tables (relation type and join column pairs). " +
+                        "Use get_table_schema to understand column details. " +
+                        "When planning how to combine tables, prefer the join keys given in `relations`. " +
                         "When you fully understand the requirements, call propose_schema " +
                         "to propose the target table structure.";
             case 3:

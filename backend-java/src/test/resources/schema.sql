@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS table_relation_column;
+DROP TABLE IF EXISTS table_relation;
 DROP TABLE IF EXISTS etl_steps;
 DROP TABLE IF EXISTS etl_jobs;
 DROP TABLE IF EXISTS messages;
@@ -89,4 +91,22 @@ CREATE TABLE etl_steps (
     step_name     VARCHAR(256) NOT NULL,
     is_temp_table SMALLINT DEFAULT 0,
     sql_file_path VARCHAR(512)
+);
+
+CREATE TABLE table_relation (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    source_table_id BIGINT NOT NULL,
+    target_table_id BIGINT NOT NULL,
+    relation_type   VARCHAR(32),
+    description     TEXT,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE table_relation_column (
+    id               BIGINT AUTO_INCREMENT PRIMARY KEY,
+    relation_id      BIGINT NOT NULL,
+    source_column_id BIGINT,
+    target_column_id BIGINT,
+    sort_order       INT DEFAULT 0
 );

@@ -115,3 +115,66 @@ export type SSEEvent =
   | { type: "turn_end" }
   | { type: "stream_end" }
   | { type: "end" };
+
+// ===== 表关系 =====
+
+export interface ColumnPair {
+  source_column_id: number;
+  source_column_name?: string;
+  target_column_id: number;
+  target_column_name?: string;
+}
+
+export interface Relation {
+  id: number;
+  source_table_id: number;
+  source_table_name?: string;
+  source_table_comment?: string;
+  target_table_id: number;
+  target_table_name?: string;
+  target_table_comment?: string;
+  relation_type: "ONE_TO_ONE" | "ONE_TO_MANY" | "MANY_TO_ONE" | "MANY_TO_MANY";
+  description?: string;
+  column_pairs: ColumnPair[];
+}
+
+export interface RelationSave {
+  source_table_id: number;
+  target_table_id: number;
+  relation_type: string;
+  description?: string;
+  column_pairs: { source_column_id: number; target_column_id: number }[];
+}
+
+export interface GraphColumn {
+  name: string;
+  type: string;
+  comment?: string;
+}
+
+export interface GraphNode {
+  id: string;
+  table_id: number;
+  table_name: string;
+  table_comment?: string;
+  columns: GraphColumn[];
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  relation_type: string;
+  column_pairs: ColumnPair[];
+}
+
+export interface LineageGraph {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export const RELATION_TYPE_LABELS: Record<string, string> = {
+  ONE_TO_ONE: "一对一",
+  ONE_TO_MANY: "一对多",
+  MANY_TO_ONE: "多对一",
+  MANY_TO_MANY: "多对多",
+};
