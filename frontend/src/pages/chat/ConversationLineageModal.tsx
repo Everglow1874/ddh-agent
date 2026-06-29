@@ -36,7 +36,7 @@ export function ConversationLineageModal({ open, onClose, tableIds, onSave }: Pr
   const [addValue, setAddValue] = useState<number | null>(null);
   const [lineMode, setLineMode] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [selectedPair, setSelectedPair] = useState<[string, string] | null>(null);
+  const [, setSelectedPair] = useState<[string, string] | null>(null);
   const lineModeRef = useRef(false);
   const selectedNodeIdRef = useRef<string | null>(null);
   const nodeTableMapRef = useRef<Map<string, { id: number; name: string; columns: GraphColumn[] }>>(new Map());
@@ -312,6 +312,13 @@ export function ConversationLineageModal({ open, onClose, tableIds, onSave }: Pr
     }
   };
 
+  const handleCancelEditRelation = () => {
+    const graph = graphRef.current;
+    if (graph) syncNodeStyles(graph, []);
+    setEditRelation(null);
+    setSelectedPair(null);
+  };
+
   const handleDeleteRelation = async () => {
     if (!editRelation?.existingRelationId) return;
     try {
@@ -422,7 +429,7 @@ export function ConversationLineageModal({ open, onClose, tableIds, onSave }: Pr
       <Modal
         title={editRelation ? `${editRelation.sourceTable.name} ←→ ${editRelation.targetTable.name}` : "编辑关系"}
         open={editRelation !== null}
-        onCancel={() => { setEditRelation(null); setSelectedPair(null); }}
+        onCancel={handleCancelEditRelation}
         width={520}
         footer={null}
         destroyOnClose

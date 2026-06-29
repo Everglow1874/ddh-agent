@@ -251,6 +251,7 @@ public class RelationDomainService {
             List<GraphColumnResponse> cols = new ArrayList<>();
             for (TableColumn c : sourceTableRepository.findColumnsByTableId(t.getId())) {
                 GraphColumnResponse gc = new GraphColumnResponse();
+                gc.setId(c.getId());
                 gc.setName(c.getColumnName());
                 gc.setType(c.getDataType());
                 gc.setComment(c.getComment());

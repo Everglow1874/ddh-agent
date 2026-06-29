@@ -148,6 +148,7 @@ export interface RelationSave {
 }
 
 export interface GraphColumn {
+  id: number;
   name: string;
   type: string;
   comment?: string;
