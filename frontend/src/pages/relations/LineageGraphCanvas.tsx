@@ -37,7 +37,7 @@ interface Props {
 }
 
 /* --- 视觉常量 ----------------------------------------------------------- */
-const CARD_W = 224;
+const CARD_W = 252;
 const HEAD_H = 46;
 const ROW_H = 28;
 const MAX_ROWS = 16;
@@ -52,23 +52,36 @@ const REL_COLOR: Record<string, string> = {
 
 type EdgeMode = "normal" | "lit" | "dim";
 
-/** 连线视觉：按关系类型上色（与图例一致），高亮 / 淡化分级 */
-function edgeStyle(type: string, mode: EdgeMode, withLabel: boolean) {
-  const color = REL_COLOR[type] || "#9aa6b6";
-  const opacity = mode === "lit" ? 1 : mode === "dim" ? 0.14 : 0.7;
-  const width = mode === "lit" ? 2.4 : 1.6;
-  return {
-    stroke: color,
-    lineWidth: width,
-    strokeOpacity: opacity,
-    endArrowFill: color,
-    endArrowOpacity: opacity,
-    labelText: withLabel ? RELATION_TYPE_LABELS[type] || type : "",
-    labelFill: color,
-    labelFillOpacity: mode === "dim" ? 0.3 : 1,
-    labelBackgroundFillOpacity: mode === "dim" ? 0.3 : 1,
-  };
-}
+const edgeColorOf = (type?: string) => REL_COLOR[type ?? ""] || "#9aa6b6";
+
+/**
+ * 边样式数据驱动：颜色 / 粗细 / 淡化全部由每条边 data 里的 relationType + hl 计算。
+ * 用 spec 级动态函数（而非每条边的静态 style.stroke），彻底避免全局默认色覆盖单边颜色，
+ * 保证一对一=靛蓝、一对多=青绿…… 与图例严格一致。
+ */
+type EdgeDatum = { data?: { relationType?: string; hl?: EdgeMode; withLabel?: boolean } };
+const EDGE_SPEC_STYLE = {
+  stroke: (d: EdgeDatum) => edgeColorOf(d.data?.relationType),
+  strokeOpacity: (d: EdgeDatum) => (d.data?.hl === "dim" ? 0.16 : 1),
+  lineWidth: (d: EdgeDatum) => (d.data?.hl === "lit" ? 2.6 : 1.8),
+  endArrow: true,
+  endArrowType: "vee",
+  endArrowSize: 8,
+  endArrowFill: (d: EdgeDatum) => edgeColorOf(d.data?.relationType),
+  endArrowOpacity: (d: EdgeDatum) => (d.data?.hl === "dim" ? 0.16 : 1),
+  labelText: (d: EdgeDatum) =>
+    d.data?.withLabel ? RELATION_TYPE_LABELS[d.data?.relationType ?? ""] || d.data?.relationType || "" : "",
+  labelFill: (d: EdgeDatum) => edgeColorOf(d.data?.relationType),
+  labelFillOpacity: (d: EdgeDatum) => (d.data?.hl === "dim" ? 0.3 : 1),
+  labelFontSize: 10.5,
+  labelFontFamily: "Manrope, system-ui, sans-serif",
+  labelBackground: true,
+  labelBackgroundFill: "#ffffff",
+  labelBackgroundStroke: "#eef1f6",
+  labelBackgroundLineWidth: 1,
+  labelBackgroundRadius: 6,
+  labelPadding: [2, 6],
+};
 
 const FONT_LINK_ID = "lineage-font-link";
 const STYLE_ID = "lineage-canvas-style";
@@ -83,12 +96,14 @@ function ensureAssets() {
       "https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap";
     document.head.appendChild(link);
   }
-  if (!document.getElementById(STYLE_ID)) {
-    const style = document.createElement("style");
-    style.id = STYLE_ID;
-    style.textContent = CANVAS_CSS;
-    document.head.appendChild(style);
+  let styleEl = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = STYLE_ID;
+    document.head.appendChild(styleEl);
   }
+  // 始终用最新内容覆盖，避免旧样式残留（同一会话内多次改版时尤其重要）
+  styleEl.textContent = CANVAS_CSS;
 }
 
 const esc = (s: string) =>
@@ -117,8 +132,10 @@ function cardHtml(
   const head = `<div class="lin-hd">
       <span class="lin-io">${chevron}</span>
       <span class="lin-tdot"></span>
-      <span class="lin-nm" title="${esc(node.table_name)}">${esc(node.table_name)}</span>
-      ${node.table_comment ? `<span class="lin-cm">${esc(node.table_comment)}</span>` : ""}
+      <span class="lin-htx">
+        <span class="lin-nm" title="${esc(node.table_name)}">${esc(node.table_name)}</span>
+        ${node.table_comment ? `<span class="lin-cm">${esc(node.table_comment)}</span>` : ""}
+      </span>
       <span class="lin-cnt">${node.columns.length}</span>
     </div>`;
 
@@ -130,8 +147,10 @@ function cardHtml(
   const rows = visible
     .map((c) => {
       const rel = relCols.has(c.id);
-      return `<div class="lin-f${rel ? " is-rel" : ""}">
+      const title = `${c.name}${c.comment ? "　" + c.comment : ""}${c.type ? "　" + c.type : ""}`;
+      return `<div class="lin-f${rel ? " is-rel" : ""}" title="${esc(title)}">
           <span class="lin-fn">${rel ? '<i class="lin-fdot"></i>' : ""}${esc(c.name)}</span>
+          <span class="lin-fc">${esc(c.comment || "")}</span>
           <span class="lin-ft">${esc(c.type || "")}</span>
         </div>`;
     })
@@ -279,11 +298,8 @@ export const LineageGraphCanvas = forwardRef<LineageGraphCanvasHandle, Props>(
               : "L";
           edgeUpdates.push({
             id: `e${ei}_${pi}`,
-            style: {
-              sourcePort: sPort,
-              targetPort: tPort,
-              ...edgeStyle(e.relation_type, mode, pi === 0),
-            },
+            data: { relationType: e.relation_type, hl: mode, withLabel: pi === 0 },
+            style: { sourcePort: sPort, targetPort: tPort },
           });
         });
       });
@@ -344,11 +360,8 @@ export const LineageGraphCanvas = forwardRef<LineageGraphCanvasHandle, Props>(
             id: `e${ei}_${pi}`,
             source: e.source,
             target: e.target,
-            style: {
-              sourcePort: sPort,
-              targetPort: tPort,
-              ...edgeStyle(e.relation_type, "normal", pi === 0),
-            },
+            data: { relationType: e.relation_type, hl: "normal", withLabel: pi === 0 },
+            style: { sourcePort: sPort, targetPort: tPort },
           });
         });
       });
@@ -359,26 +372,7 @@ export const LineageGraphCanvas = forwardRef<LineageGraphCanvasHandle, Props>(
         padding: 24,
         data: { nodes: g6Nodes as never, edges: g6Edges as never },
         node: { type: "html" },
-        edge: {
-          type: "cubic-horizontal",
-          style: {
-            stroke: "#c7d0de",
-            lineWidth: 1.4,
-            endArrow: true,
-            endArrowType: "vee",
-            endArrowSize: 8,
-            endArrowFill: "#c7d0de",
-            labelFill: "#9aa6b6",
-            labelFontSize: 10.5,
-            labelFontFamily: "Manrope, system-ui, sans-serif",
-            labelBackground: true,
-            labelBackgroundFill: "#ffffff",
-            labelBackgroundStroke: "#eef1f6",
-            labelBackgroundLineWidth: 1,
-            labelBackgroundRadius: 6,
-            labelPadding: [2, 6],
-          },
-        },
+        edge: { type: "cubic-horizontal", style: EDGE_SPEC_STYLE } as never,
         layout: {
           type: "dagre",
           rankdir: "LR",
@@ -672,28 +666,32 @@ const CANVAS_CSS = `
 .lin-io{ color:#b3bccd; font-size:10px; width:10px; flex:none; }
 .lin-tdot{ width:8px; height:8px; border-radius:3px; flex:none;
   background:linear-gradient(135deg,var(--lin-accent),#7b91f4); box-shadow:0 0 0 3px rgba(79,107,237,.12); }
+.lin-htx{ display:flex; flex-direction:column; justify-content:center; gap:1px; flex:1; min-width:0; }
 .lin-nm{ font-weight:800; font-size:13px; color:var(--lin-ink); letter-spacing:.2px;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:96px; }
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 .lin-cm{ font-size:11px; color:var(--lin-muted); white-space:nowrap; overflow:hidden;
-  text-overflow:ellipsis; flex:1; min-width:0; }
+  text-overflow:ellipsis; max-width:100%; }
 .lin-cnt{ margin-left:auto; flex:none; font-size:10px; font-weight:700; color:#7c89a0;
   background:#eef1f6; border-radius:8px; padding:1px 7px; }
 .lin-card.is-collapsed .lin-hd{ border-bottom:none; }
 
 .lin-fs{ padding:3px 0; }
 .lin-f{
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  display:flex; align-items:center; gap:8px; flex-wrap:nowrap;
   height:${ROW_H}px; padding:0 12px; font-size:12px; box-sizing:border-box;
-  border-left:2px solid transparent;
+  border-left:2px solid transparent; overflow:hidden;
 }
 .lin-f + .lin-f{ border-top:1px dashed #f1f4f9; }
 .lin-f.is-rel{ background:var(--lin-soft); border-left-color:var(--lin-accent); }
-.lin-fn{ color:#3a465b; font-weight:600; white-space:nowrap; overflow:hidden;
-  text-overflow:ellipsis; display:flex; align-items:center; gap:6px; }
+.lin-fn{ flex:0 1 auto; min-width:0; max-width:50%; color:#3a465b; font-weight:600;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .lin-f.is-rel .lin-fn{ color:#2f3e8c; }
-.lin-fdot{ width:5px; height:5px; border-radius:50%; background:var(--lin-accent); flex:none; }
-.lin-ft{ color:#9aa6b6; font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10.5px;
-  font-weight:500; white-space:nowrap; flex:none; }
+.lin-fdot{ display:inline-block; width:5px; height:5px; border-radius:50%;
+  background:var(--lin-accent); margin-right:6px; vertical-align:middle; }
+.lin-fc{ flex:1 1 auto; min-width:0; text-align:right; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; color:#9aa6b6; font-size:11px; }
+.lin-ft{ flex:0 0 auto; color:#9aa6b6; font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:10.5px; font-weight:500; white-space:nowrap; }
 .lin-more{ padding:5px 12px; font-size:11px; color:#9aa6b6; font-style:italic; }
 
 /* 图例 */

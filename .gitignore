@@ -14,8 +14,9 @@ venv/
 *.db
 *.sqlite
 
-# Project outputs
+# Project outputs（生成的 ETL 计划与 SQL 文件，运行期产物，不纳入版本控制）
 backend/projects/
+/backend-java/projects/
 
 # Brainstorm session files
 .superpowers/

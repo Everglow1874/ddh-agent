@@ -17,5 +17,7 @@ public class EtlJob {
     /** JSON: [{"name":"col","type":"VARCHAR","comment":"..."}] */
     private String targetSchema;
     private String planMdPath;
+    /** plan.md 文本内容 */
+    private String planContent;
     private LocalDateTime createdAt;
 }

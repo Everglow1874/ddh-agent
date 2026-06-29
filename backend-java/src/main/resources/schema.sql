@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS etl_jobs (
     target_table  VARCHAR(128) NOT NULL                        COMMENT '目标表名',
     target_schema TEXT                                         COMMENT '目标表结构（JSON数组）',
     plan_md_path  VARCHAR(512)                                 COMMENT '计划文档(Markdown)路径',
+    plan_content  TEXT                                         COMMENT '计划文档(Markdown)内容',
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP          COMMENT '创建时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ETL作业表';
 
@@ -83,7 +84,8 @@ CREATE TABLE IF NOT EXISTS etl_steps (
     step_order    INT NOT NULL                                 COMMENT '步骤顺序',
     step_name     VARCHAR(256) NOT NULL                        COMMENT '步骤名称',
     is_temp_table SMALLINT DEFAULT 0                           COMMENT '是否临时表：0=最终表 1=临时表',
-    sql_file_path VARCHAR(512)                                 COMMENT 'SQL文件路径'
+    sql_file_path VARCHAR(512)                                 COMMENT 'SQL文件路径',
+    sql_content   TEXT                                         COMMENT 'SQL文本内容'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ETL步骤表';
 
 CREATE TABLE IF NOT EXISTS table_relation (

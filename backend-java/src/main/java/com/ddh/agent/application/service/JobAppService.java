@@ -44,15 +44,17 @@ public class JobAppService {
         if (!step.getJobId().equals(jobId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Step not found");
         }
-        if (step.getSqlFilePath() == null || !Files.exists(Paths.get(step.getSqlFilePath()))) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "SQL file not found");
-        }
-        String sql;
-        try {
-            sql = new String(Files.readAllBytes(Paths.get(step.getSqlFilePath())),
-                StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "SQL file not found");
+        String sql = step.getSqlContent();
+        if (sql == null) {
+            if (step.getSqlFilePath() == null || !Files.exists(Paths.get(step.getSqlFilePath()))) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "SQL file not found");
+            }
+            try {
+                sql = new String(Files.readAllBytes(Paths.get(step.getSqlFilePath())),
+                    StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "SQL file not found");
+            }
         }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("step_id", stepId);
@@ -61,28 +63,37 @@ public class JobAppService {
         return result;
     }
 
-    /** 将 job 的全部 .sql + plan.md 打包成 zip 字节数组。 */
+    /**
+     * 将 job 的全部 .sql + plan.md 打包成 zip。
+     * 每次从数据库内容重新生成文件到临时目录，打包后清理临时文件。
+     */
     public byte[] downloadZip(Long jobId) {
-        etlRepository.findJobById(jobId)
+        EtlJob job = etlRepository.findJobById(jobId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ETL job not found"));
-        EtlJob job = etlRepository.findJobById(jobId).get();
         List<EtlStep> steps = etlRepository.findStepsByJobId(jobId);
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(bos)) {
             for (EtlStep step : steps) {
-                if (step.getSqlFilePath() != null) {
-                    Path p = Paths.get(step.getSqlFilePath());
-                    if (Files.exists(p)) {
-                        addToZip(zos, p, p.getFileName().toString());
-                    }
+                String content = step.getSqlContent();
+                if (content == null && step.getSqlFilePath() != null) {
+                    content = readFileSafe(Paths.get(step.getSqlFilePath()));
+                }
+                if (content != null && !content.isEmpty()) {
+                    String filename = "step" + step.getStepOrder() + "_" + safeEntryName(step.getStepName()) + ".sql";
+                    zos.putNextEntry(new ZipEntry(filename));
+                    zos.write(content.getBytes(StandardCharsets.UTF_8));
+                    zos.closeEntry();
                 }
             }
-            if (job.getPlanMdPath() != null) {
-                Path planPath = Paths.get(job.getPlanMdPath());
-                if (Files.exists(planPath)) {
-                    addToZip(zos, planPath, "plan.md");
-                }
+            String planContent = job.getPlanContent();
+            if (planContent == null && job.getPlanMdPath() != null) {
+                planContent = readFileSafe(Paths.get(job.getPlanMdPath()));
+            }
+            if (planContent != null && !planContent.isEmpty()) {
+                zos.putNextEntry(new ZipEntry("plan.md"));
+                zos.write(planContent.getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
             }
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to build zip");
@@ -90,10 +101,48 @@ public class JobAppService {
         return bos.toByteArray();
     }
 
-    private void addToZip(ZipOutputStream zos, Path path, String entryName) throws IOException {
-        zos.putNextEntry(new ZipEntry(entryName));
-        Files.copy(path, zos);
-        zos.closeEntry();
+    private static String readFileSafe(Path path) {
+        try {
+            return Files.exists(path)
+                ? new String(Files.readAllBytes(path), StandardCharsets.UTF_8)
+                : null;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /** 删除 job 对应的文件系统源文件（.sql + plan.md）。仅当 DB 中有 content 时才删，保护旧数据。
+     *  文件删完后，若所在的 projects/{projectId} 目录已空，连空目录一并清理。 */
+    public void cleanupSourceFiles(Long jobId) {
+        EtlJob job = etlRepository.findJobById(jobId).orElse(null);
+        if (job == null) return;
+        Set<Path> touchedDirs = new HashSet<>();
+        if (job.getPlanMdPath() != null && job.getPlanContent() != null) {
+            deleteFileTrackDir(job.getPlanMdPath(), touchedDirs);
+        }
+        for (EtlStep step : etlRepository.findStepsByJobId(jobId)) {
+            if (step.getSqlFilePath() != null && step.getSqlContent() != null) {
+                deleteFileTrackDir(step.getSqlFilePath(), touchedDirs);
+            }
+        }
+        // 删除已空的目录（其它 job 仍占用同目录时 delete 会抛 DirectoryNotEmptyException，被忽略）
+        for (Path dir : touchedDirs) {
+            try { Files.deleteIfExists(dir); } catch (IOException ignored) {}
+        }
+    }
+
+    private void deleteFileTrackDir(String filePath, Set<Path> dirs) {
+        Path p = Paths.get(filePath);
+        try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+        Path parent = p.getParent();
+        if (parent != null) dirs.add(parent);
+    }
+
+    private static String safeEntryName(String name) {
+        if (name == null) return "";
+        return name.replaceAll("[^a-zA-Z0-9_\\u4e00-\\u9fff]", "_")
+                   .replaceAll("_+", "_")
+                   .replaceAll("^_|_$", "");
     }
 
     /**
@@ -114,7 +163,7 @@ public class JobAppService {
             Map<String, Object> sm = new LinkedHashMap<>();
             sm.put("step_order", step.getStepOrder());
             sm.put("step_name", step.getStepName());
-            sm.put("sql", readSqlSafe(step.getSqlFilePath()));
+            sm.put("sql", readSqlSafe(step));
             steps.add(sm);
         }
         result.put("job_id", job.getId());
@@ -122,10 +171,11 @@ public class JobAppService {
         return result;
     }
 
-    private String readSqlSafe(String path) {
-        if (path == null) return "";
+    private String readSqlSafe(EtlStep step) {
+        if (step.getSqlContent() != null) return step.getSqlContent();
+        if (step.getSqlFilePath() == null) return "";
         try {
-            Path p = Paths.get(path);
+            Path p = Paths.get(step.getSqlFilePath());
             return Files.exists(p)
                 ? new String(Files.readAllBytes(p), StandardCharsets.UTF_8) : "";
         } catch (IOException e) {

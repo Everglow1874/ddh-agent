@@ -56,10 +56,13 @@ class JobControllerTest {
         job.setTargetSchema("[{\"name\":\"id\",\"type\":\"bigint\"}]");
         job.setCreatedAt(LocalDateTime.now());
         String sqlPath = etlDomainService.writeSqlFile(1L, 1, "load", "SELECT 1;");
-        job.setPlanMdPath(etlDomainService.writePlanMd(1L, "dim_test", "req", java.util.Collections.emptyList()));
+        EtlDomainService.PlanMdResult planResult = etlDomainService.writePlanMd(
+            1L, "dim_test", "req", java.util.Collections.emptyList());
+        job.setPlanMdPath(planResult.path);
+        job.setPlanContent(planResult.content);
         etlRepository.saveJob(job);
 
-        EtlStep step = etlDomainService.createStep(job.getId(), 1, "load", false, sqlPath);
+        EtlStep step = etlDomainService.createStep(job.getId(), 1, "load", false, sqlPath, "SELECT 1;");
 
         mvc.perform(get("/api/projects/1/jobs").header("Authorization", token))
             .andExpect(status().isOk());

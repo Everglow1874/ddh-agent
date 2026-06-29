@@ -34,6 +34,7 @@ public class JobController {
     @GetMapping("/jobs/{jobId}/download")
     public ResponseEntity<byte[]> download(@PathVariable Long jobId, Authentication auth) {
         byte[] zip = jobAppService.downloadZip(jobId);
+        jobAppService.cleanupSourceFiles(jobId);
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=etl_job_" + jobId + ".zip")

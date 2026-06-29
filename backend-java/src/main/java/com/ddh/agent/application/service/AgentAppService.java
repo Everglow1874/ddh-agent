@@ -105,11 +105,11 @@ public class AgentAppService {
             }).collect(Collectors.toList());
 
         String requirement = firstUser.length() > 500 ? firstUser.substring(0, 500) : firstUser;
-        String planPath = etlDomainService.writePlanMd(
+        EtlDomainService.PlanMdResult planResult = etlDomainService.writePlanMd(
             conv.getProjectId(), targetTable, requirement, stepsForPlan);
 
         EtlJob job = etlDomainService.createJob(
-            conv.getProjectId(), conv.getId(), targetTable, targetSchema, planPath);
+            conv.getProjectId(), conv.getId(), targetTable, targetSchema, planResult.path, planResult.content);
 
         for (Map<String, Object> step : sorted) {
             etlDomainService.createStep(
@@ -117,7 +117,8 @@ public class AgentAppService {
                 toInt(step.get("step_order")),
                 (String) step.get("step_name"),
                 Boolean.TRUE.equals(step.get("is_temp_table")),
-                (String) step.get("file_path"));
+                (String) step.get("file_path"),
+                (String) step.get("sql"));
         }
 
         conv.setState(5);

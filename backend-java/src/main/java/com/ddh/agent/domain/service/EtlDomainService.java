@@ -34,8 +34,18 @@ public class EtlDomainService {
         return path.toString();
     }
 
-    public String writePlanMd(Long projectId, String targetTable,
-                              String requirement, List<Map<String, Object>> steps) {
+    /** writePlanMd 的结果：包含文件路径和文本内容 */
+    public static class PlanMdResult {
+        public final String path;
+        public final String content;
+        public PlanMdResult(String path, String content) {
+            this.path = path;
+            this.content = content;
+        }
+    }
+
+    public PlanMdResult writePlanMd(Long projectId, String targetTable,
+                                    String requirement, List<Map<String, Object>> steps) {
         Path dir = projectDir(projectId);
         StringBuilder sb = new StringBuilder();
         sb.append("# ETL 执行计划\n\n## 需求描述\n\n").append(requirement)
@@ -48,17 +58,19 @@ public class EtlDomainService {
               .append(String.valueOf(step.getOrDefault("description", ""))).append("\n\n")
               .append("输出表：`").append(String.valueOf(step.getOrDefault("output_table", ""))).append("`\n\n");
         }
+        String content = sb.toString();
         Path path = dir.resolve("plan.md");
         try {
-            Files.write(path, sb.toString().getBytes(StandardCharsets.UTF_8));
+            Files.write(path, content.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new RuntimeException("Failed to write plan.md", e);
         }
-        return path.toString();
+        return new PlanMdResult(path.toString(), content);
     }
 
     public EtlJob createJob(Long projectId, Long conversationId, String targetTable,
-                            List<Map<String, Object>> targetSchema, String planMdPath) {
+                            List<Map<String, Object>> targetSchema, String planMdPath,
+                            String planContent) {
         EtlJob job = new EtlJob();
         job.setProjectId(projectId);
         job.setConversationId(conversationId);
@@ -66,18 +78,21 @@ public class EtlDomainService {
         try { job.setTargetSchema(mapper.writeValueAsString(targetSchema)); }
         catch (Exception e) { job.setTargetSchema("[]"); }
         job.setPlanMdPath(planMdPath);
+        job.setPlanContent(planContent);
         job.setCreatedAt(LocalDateTime.now());
         return etlRepository.saveJob(job);
     }
 
     public EtlStep createStep(Long jobId, int stepOrder, String stepName,
-                              boolean isTempTable, String sqlFilePath) {
+                              boolean isTempTable, String sqlFilePath,
+                              String sqlContent) {
         EtlStep step = new EtlStep();
         step.setJobId(jobId);
         step.setStepOrder(stepOrder);
         step.setStepName(stepName);
         step.setIsTempTable(isTempTable ? 1 : 0);
         step.setSqlFilePath(sqlFilePath);
+        step.setSqlContent(sqlContent);
         return etlRepository.saveStep(step);
     }
 

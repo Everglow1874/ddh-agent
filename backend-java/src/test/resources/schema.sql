@@ -82,6 +82,7 @@ CREATE TABLE etl_jobs (
     target_table  VARCHAR(128) NOT NULL,
     target_schema TEXT,
     plan_md_path  VARCHAR(512),
+    plan_content  TEXT,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -91,7 +92,8 @@ CREATE TABLE etl_steps (
     step_order    INT NOT NULL,
     step_name     VARCHAR(256) NOT NULL,
     is_temp_table SMALLINT DEFAULT 0,
-    sql_file_path VARCHAR(512)
+    sql_file_path VARCHAR(512),
+    sql_content   TEXT
 );
 
 CREATE TABLE table_relation (

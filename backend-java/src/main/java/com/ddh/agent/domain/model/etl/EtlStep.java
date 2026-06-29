@@ -16,4 +16,6 @@ public class EtlStep {
     /** 0=final table 1=temp table */
     private Integer isTempTable;
     private String sqlFilePath;
+    /** SQL 文本内容 */
+    private String sqlContent;
 }
