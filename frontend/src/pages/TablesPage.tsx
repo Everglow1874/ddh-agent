@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Table, Button, Segmented, Upload, Modal, Form, Input, InputNumber, Select, message, Space, Popconfirm, Tag, Drawer } from "antd";
+import { Table, Button, Segmented, Upload, Modal, Form, Input, InputNumber, Select, message, Space, Popconfirm, Tag } from "antd";
 import { UploadOutlined, SearchOutlined, DownloadOutlined } from "@ant-design/icons";
 import type { UploadFile } from "antd";
 import { listTables, listTablesPage, importTable, downloadTemplate, deleteTable, getTable, updateTable, addColumn, updateColumn, deleteColumn } from "../api/tables";
@@ -34,13 +34,10 @@ export function TablesPage() {
   const [editing, setEditing] = useState<Relation | null>(null);
   const [graphOpen, setGraphOpen] = useState(false);
 
-  const [viewDrawerOpen, setViewDrawerOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
   const [viewTable, setViewTable] = useState<TableDetail | null>(null);
   const [viewLoading, setViewLoading] = useState(false);
-
-  const [updateOpen, setUpdateOpen] = useState(false);
-  const [updateForm] = Form.useForm();
-  const [updatingTable, setUpdatingTable] = useState<SourceTable | null>(null);
+  const [tableForm] = Form.useForm();
 
   const [columnModalOpen, setColumnModalOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState<TableColumn | null>(null);
@@ -117,7 +114,7 @@ export function TablesPage() {
 
   const onView = async (id: number) => {
     setViewLoading(true);
-    setViewDrawerOpen(true);
+    setViewOpen(true);
     try {
       setViewTable(await getTable(id));
     } catch {
@@ -127,19 +124,12 @@ export function TablesPage() {
     }
   };
 
-  const onUpdateOpen = (record: SourceTable) => {
-    setUpdatingTable(record);
-    updateForm.setFieldsValue({ name: record.name, description: record.description ?? "" });
-    setUpdateOpen(true);
-  };
-
-  const onUpdateSave = async (values: { name: string; description: string }) => {
-    if (!updatingTable) return;
+  const onTableInfoSave = async (values: { name: string; description: string }) => {
+    if (!viewTable) return;
     try {
-      await updateTable(updatingTable.id, values);
-      message.success("更新成功");
-      setUpdateOpen(false);
-      setUpdatingTable(null);
+      await updateTable(viewTable.id, values);
+      message.success("表信息已更新");
+      setViewTable({ ...viewTable, name: values.name, description: values.description });
       loadTables();
     } catch {
       message.error("更新失败");
@@ -191,8 +181,7 @@ export function TablesPage() {
       width: 200,
       render: (_: unknown, record: SourceTable) => (
         <Space>
-          <Button type="link" size="small" onClick={() => onView(record.id)}>查看</Button>
-          <Button type="link" size="small" onClick={() => onUpdateOpen(record)}>编辑</Button>
+          <Button type="link" size="small" onClick={() => onView(record.id)}>查看 / 编辑</Button>
           <Popconfirm title="确认删除该表？" onConfirm={() => onDelete(record.id)}>
             <Button type="link" size="small" danger>删除</Button>
           </Popconfirm>
@@ -362,17 +351,35 @@ export function TablesPage() {
         </Modal>
       )}
 
-      <Drawer
-        title={viewTable ? `${viewTable.name} - 字段列表` : "表详情"}
-        open={viewDrawerOpen}
-        onClose={() => setViewDrawerOpen(false)}
-        width={580}
-        loading={viewLoading}
+      <Modal
+        title={viewTable ? `表详情 / 编辑 - ${viewTable.name}` : "表详情"}
+        open={viewOpen}
+        onCancel={() => setViewOpen(false)}
+        footer={null}
+        width="80%"
+        style={{ top: 24 }}
+        destroyOnClose
       >
+        {viewLoading && <p style={{ color: "#999" }}>加载中…</p>}
         {viewTable && (
           <div>
-            <p><b>描述：</b>{viewTable.description ?? "-"}</p>
-            <Space style={{ marginBottom: 8 }}>
+            <Form form={tableForm} onFinish={onTableInfoSave} layout="vertical"
+              initialValues={{ name: viewTable.name, description: viewTable.description ?? "" }}
+              style={{ background: "#f6f8fc", padding: "12px 16px", borderRadius: 8, marginBottom: 16 }}>
+              <Space style={{ display: "flex" }} align="start">
+                <Form.Item name="name" label="表名" rules={[{ required: true, message: "请输入表名" }]} style={{ flex: 1 }}>
+                  <Input />
+                </Form.Item>
+                <Form.Item name="description" label="描述" style={{ flex: 2 }}>
+                  <Input />
+                </Form.Item>
+                <Form.Item label=" ">
+                  <Button type="primary" onClick={() => tableForm.submit()}>保存表信息</Button>
+                </Form.Item>
+              </Space>
+            </Form>
+            <Space style={{ marginBottom: 8, justifyContent: "space-between", width: "100%" }}>
+              <b>字段列表</b>
               <Button type="primary" size="small" onClick={onColumnAdd}>+ 添加字段</Button>
             </Space>
             <Table
@@ -410,7 +417,7 @@ export function TablesPage() {
             />
           </div>
         )}
-      </Drawer>
+      </Modal>
 
       <Modal
         title={editingColumn ? "编辑字段" : "添加字段"}
@@ -461,22 +468,6 @@ export function TablesPage() {
             </Form.Item>
           </Space>
           <Form.Item name="code_info" label="代码信息">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      <Modal
-        title="编辑表信息"
-        open={updateOpen}
-        onCancel={() => { setUpdateOpen(false); setUpdatingTable(null); }}
-        onOk={() => updateForm.submit()}
-      >
-        <Form form={updateForm} onFinish={onUpdateSave} layout="vertical">
-          <Form.Item name="name" label="表名" rules={[{ required: true, message: "请输入表名" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="description" label="描述">
             <Input.TextArea rows={2} />
           </Form.Item>
         </Form>
