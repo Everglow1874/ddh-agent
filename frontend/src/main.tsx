@@ -13,6 +13,7 @@ import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ChatPage } from "./pages/ChatPage";
 import { AdminConfigPage } from "./pages/AdminConfigPage";
+import { DialectKbPage } from "./pages/DialectKbPage";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -33,6 +34,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/projects/:id" element={<ProjectDetailPage />} />
               <Route path="/admin/config" element={<AdminConfigPage />} />
+              <Route path="/admin/dialect" element={<DialectKbPage />} />
             </Route>
             <Route
               path="/projects/:id/chat"
