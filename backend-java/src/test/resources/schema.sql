@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS dialect_type_rule;
+DROP TABLE IF EXISTS dialect_function_rule;
 DROP TABLE IF EXISTS table_relation_column;
 DROP TABLE IF EXISTS table_relation;
 DROP TABLE IF EXISTS etl_steps;
@@ -121,4 +123,30 @@ CREATE TABLE table_relation_column (
     source_column_id BIGINT,
     target_column_id BIGINT,
     sort_order       INT DEFAULT 0
+);
+
+CREATE TABLE dialect_type_rule (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    type_name       VARCHAR(64) NOT NULL,
+    allowed_forms   VARCHAR(255),
+    rounding_rule   VARCHAR(255),
+    platform_syntax VARCHAR(128),
+    note            TEXT,
+    enabled         SMALLINT DEFAULT 1,
+    sort_order      INT DEFAULT 0,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE dialect_function_rule (
+    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    function_name  VARCHAR(128) NOT NULL,
+    signature      VARCHAR(255),
+    description    TEXT,
+    example        TEXT,
+    note           TEXT,
+    enabled        SMALLINT DEFAULT 1,
+    sort_order     INT DEFAULT 0,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

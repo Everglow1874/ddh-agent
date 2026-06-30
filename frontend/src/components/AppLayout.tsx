@@ -14,6 +14,8 @@ export function AppLayout() {
     ? "/projects"
     : location.pathname.startsWith("/tables")
     ? "/tables"
+    : location.pathname.startsWith("/admin/dialect")
+    ? "/admin/dialect"
     : location.pathname.startsWith("/admin")
     ? "/admin/config"
     : "";
@@ -30,6 +32,7 @@ export function AppLayout() {
           items={[
             { key: "/tables", label: "原表仓库" },
             { key: "/projects", label: "我的项目" },
+            { key: "/admin/dialect", label: "方言知识库" },
             { key: "/admin/config", label: "系统配置" },
           ]}
         />

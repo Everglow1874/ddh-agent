@@ -30,6 +30,8 @@ public class AgentDomainService {
     private EtlDomainService etlDomainService;
     @Autowired
     private RelationDomainService relationDomainService;
+    @Autowired
+    private DialectKbDomainService dialectKbDomainService;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -298,7 +300,8 @@ public class AgentDomainService {
                         "(3) a step to CREATE each TEMPORARY TABLE you decide to use (is_temp_table=true) — " +
                         "only when temporary tables are actually needed; if none are needed, omit them entirely. " +
                         "Order the steps so every temporary table and the target table are created BEFORE any step writes into them. " +
-                        "Call propose_etl_steps with this complete plan.";
+                        "Call propose_etl_steps with this complete plan." +
+                        dialectKbDomainService.buildPromptSection();
             case 4:
                 return base +
                         "The ETL execution steps have been confirmed (shown in conversation history). " +
@@ -308,7 +311,8 @@ public class AgentDomainService {
                         "the target-table-creation step must emit CREATE TABLE for the target table using the confirmed schema; " +
                         "every step marked is_temp_table=true must emit CREATE TEMPORARY TABLE for that step's output table; " +
                         "the cleaning/load steps must emit the transformation SQL (e.g. INSERT INTO ... SELECT) " +
-                        "that writes into the temporary or target tables.";
+                        "that writes into the temporary or target tables." +
+                        dialectKbDomainService.buildPromptSection();
             default:
                 return base;
         }

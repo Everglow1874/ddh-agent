@@ -114,3 +114,29 @@ CREATE TABLE IF NOT EXISTS table_relation_column (
     target_column_id BIGINT                                COMMENT '关联表字段(table_columns.id)',
     sort_order       INT DEFAULT 0                          COMMENT '排序'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='表关系字段对(支持复合键)';
+
+CREATE TABLE IF NOT EXISTS dialect_type_rule (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY     COMMENT '主键ID',
+    type_name       VARCHAR(64) NOT NULL                 COMMENT '类型名，如 VARCHAR',
+    allowed_forms   VARCHAR(255)                         COMMENT '允许的长度/精度形态，如 10,50,100,1000',
+    rounding_rule   VARCHAR(255)                         COMMENT '取整规则，如 向上取最近允许值',
+    platform_syntax VARCHAR(128)                         COMMENT '平台写法（与标准不同时填）',
+    note            TEXT                                 COMMENT '说明',
+    enabled         SMALLINT DEFAULT 1                   COMMENT '是否启用 0/1',
+    sort_order      INT DEFAULT 0                        COMMENT '排序',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP  COMMENT '创建时间',
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='方言-类型知识库';
+
+CREATE TABLE IF NOT EXISTS dialect_function_rule (
+    id             BIGINT AUTO_INCREMENT PRIMARY KEY      COMMENT '主键ID',
+    function_name  VARCHAR(128) NOT NULL                 COMMENT '函数名',
+    signature      VARCHAR(255)                          COMMENT '函数签名',
+    description    TEXT                                  COMMENT '语义说明',
+    example        TEXT                                  COMMENT '用法示例',
+    note           TEXT                                  COMMENT '备注',
+    enabled        SMALLINT DEFAULT 1                    COMMENT '是否启用 0/1',
+    sort_order     INT DEFAULT 0                         COMMENT '排序',
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP   COMMENT '创建时间',
+    updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='方言-内部函数知识库';

@@ -197,3 +197,27 @@ export const RELATION_TYPE_LABELS: Record<string, string> = {
   MANY_TO_ONE: "多对一",
   MANY_TO_MANY: "多对多",
 };
+
+// ===== 方言知识库 =====
+
+export interface DialectTypeRule {
+  id: number;
+  type_name: string;
+  allowed_forms: string | null;
+  rounding_rule: string | null;
+  platform_syntax: string | null;
+  note: string | null;
+  enabled: number;
+  sort_order: number;
+}
+
+export interface DialectFunctionRule {
+  id: number;
+  function_name: string;
+  signature: string | null;
+  description: string | null;
+  example: string | null;
+  note: string | null;
+  enabled: number;
+  sort_order: number;
+}
