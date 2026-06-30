@@ -50,7 +50,16 @@ CREATE TABLE table_columns (
     column_name VARCHAR(128) NOT NULL,
     data_type   VARCHAR(64)  NOT NULL,
     comment     TEXT,
-    sort_order  INT DEFAULT 0
+    sort_order  INT DEFAULT 0,
+    col_length           INT,
+    col_precision        INT,
+    is_distribution_key  SMALLINT DEFAULT 0,
+    is_partition_key     SMALLINT DEFAULT 0,
+    is_primary_key       SMALLINT DEFAULT 0,
+    is_nullable          SMALLINT DEFAULT 1,
+    code_info            VARCHAR(512),
+    default_value        VARCHAR(255),
+    downstream_job_count INT
 );
 
 CREATE TABLE conversations (

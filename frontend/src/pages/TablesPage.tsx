@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
-import { Table, Button, Segmented, Upload, Modal, Form, Input, message, Space, Popconfirm, Tag, Drawer } from "antd";
-import { UploadOutlined, SearchOutlined } from "@ant-design/icons";
+import { Table, Button, Segmented, Upload, Modal, Form, Input, InputNumber, Select, message, Space, Popconfirm, Tag, Drawer } from "antd";
+import { UploadOutlined, SearchOutlined, DownloadOutlined } from "@ant-design/icons";
 import type { UploadFile } from "antd";
-import { listTables, listTablesPage, importTable, deleteTable, getTable, updateTable, addColumn, updateColumn, deleteColumn } from "../api/tables";
+import { listTables, listTablesPage, importTable, downloadTemplate, deleteTable, getTable, updateTable, addColumn, updateColumn, deleteColumn } from "../api/tables";
+import type { ColumnRequest } from "../api/tables";
 import { listRelationsPage, deleteRelation } from "../api/relations";
 import { RELATION_TYPE_LABELS } from "../api/types";
 import type { SourceTable, Relation, TableDetail, TableColumn } from "../api/types";
 import { RelationEditModal } from "./relations/RelationEditModal";
 import { LineageGraphModal } from "./relations/LineageGraphModal";
+
+const YES_NO = [{ label: "是", value: 1 }, { label: "否", value: 0 }];
+const renderBool = (v: number | null) =>
+  v === 1 ? <Tag color="blue">是</Tag> : v === 0 ? <Tag>否</Tag> : "-";
 
 type TabScope = "public" | "private" | "relations";
 
@@ -161,7 +166,7 @@ export function TablesPage() {
     setViewTable(detail);
   };
 
-  const onColumnSave = async (values: { column_name: string; data_type: string; comment?: string }) => {
+  const onColumnSave = async (values: ColumnRequest) => {
     if (!viewTable) return;
     const tid = viewTable.id;
     if (editingColumn) {
@@ -331,14 +336,21 @@ export function TablesPage() {
       />
 
       {scope !== "relations" && (
-        <Modal title="导入 CSV" open={importOpen} onCancel={() => setImportOpen(false)} onOk={() => form.submit()}>
+        <Modal title="导入表（CSV / Excel）" open={importOpen} onCancel={() => setImportOpen(false)} onOk={() => form.submit()}>
+          <div style={{ marginBottom: 12, padding: "8px 12px", background: "#f6f8fc", borderRadius: 8, fontSize: 13 }}>
+            <Space size={4} wrap>
+              <span style={{ color: "#666" }}>请按 13 列标准模板填写：</span>
+              <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => downloadTemplate("xlsx")}>下载 xlsx 模板</Button>
+              <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => downloadTemplate("csv")}>下载 csv 模板</Button>
+            </Space>
+          </div>
           <Form form={form} onFinish={onImport} layout="vertical">
-            <Form.Item label="CSV 文件" required>
+            <Form.Item label="文件（.xlsx / .xls / .csv）" required>
               <Upload
                 beforeUpload={() => false}
                 fileList={fileList}
                 onChange={({ fileList: fl }) => setFileList(fl.slice(-1))}
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
               >
                 <Button icon={<UploadOutlined />}>选择文件</Button>
               </Upload>
@@ -368,12 +380,23 @@ export function TablesPage() {
               rowKey="id"
               size="small"
               pagination={false}
+              scroll={{ x: "max-content" }}
               columns={[
-                { title: "字段名", dataIndex: "column_name", key: "column_name" },
+                { title: "序号", dataIndex: "sort_order", key: "sort_order", width: 56 },
+                { title: "字段名", dataIndex: "column_name", key: "column_name", fixed: "left" },
+                { title: "中文名", dataIndex: "comment", key: "comment", render: (v: string | null) => v ?? "-" },
                 { title: "类型", dataIndex: "data_type", key: "data_type" },
-                { title: "注释", dataIndex: "comment", key: "comment", render: (v: string | null) => v ?? "-" },
+                { title: "长度", dataIndex: "col_length", key: "col_length", render: (v: number | null) => v ?? "-" },
+                { title: "精度", dataIndex: "col_precision", key: "col_precision", render: (v: number | null) => v ?? "-" },
+                { title: "主键", dataIndex: "is_primary_key", key: "is_primary_key", render: renderBool },
+                { title: "可空", dataIndex: "is_nullable", key: "is_nullable", render: renderBool },
+                { title: "分布键", dataIndex: "is_distribution_key", key: "is_distribution_key", render: renderBool },
+                { title: "分区键", dataIndex: "is_partition_key", key: "is_partition_key", render: renderBool },
+                { title: "缺省值", dataIndex: "default_value", key: "default_value", render: (v: string | null) => v ?? "-" },
+                { title: "代码信息", dataIndex: "code_info", key: "code_info", render: (v: string | null) => v ?? "-" },
+                { title: "下游数", dataIndex: "downstream_job_count", key: "downstream_job_count", render: (v: number | null) => v ?? "-" },
                 {
-                  title: "操作", key: "action", width: 120,
+                  title: "操作", key: "action", width: 110, fixed: "right",
                   render: (_: unknown, col: TableColumn) => (
                     <Space>
                       <Button type="link" size="small" onClick={() => onColumnEdit(col)}>编辑</Button>
@@ -396,13 +419,48 @@ export function TablesPage() {
         onOk={() => columnForm.submit()}
       >
         <Form form={columnForm} onFinish={onColumnSave} layout="vertical">
-          <Form.Item name="column_name" label="字段名" rules={[{ required: true, message: "请输入字段名" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="data_type" label="类型" rules={[{ required: true, message: "请输入数据类型" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="comment" label="注释">
+          <Space style={{ display: "flex" }} align="start">
+            <Form.Item name="column_name" label="字段名" rules={[{ required: true, message: "请输入字段名" }]} style={{ flex: 1 }}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="comment" label="字段中文名" style={{ flex: 1 }}>
+              <Input />
+            </Form.Item>
+          </Space>
+          <Space style={{ display: "flex" }} align="start">
+            <Form.Item name="data_type" label="类型" rules={[{ required: true, message: "请输入数据类型" }]} style={{ flex: 1 }}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="col_length" label="长度">
+              <InputNumber style={{ width: 100 }} />
+            </Form.Item>
+            <Form.Item name="col_precision" label="精度">
+              <InputNumber style={{ width: 100 }} />
+            </Form.Item>
+          </Space>
+          <Space style={{ display: "flex" }} align="start" wrap>
+            <Form.Item name="is_primary_key" label="主键">
+              <Select options={YES_NO} allowClear style={{ width: 80 }} />
+            </Form.Item>
+            <Form.Item name="is_nullable" label="可空">
+              <Select options={YES_NO} allowClear style={{ width: 80 }} />
+            </Form.Item>
+            <Form.Item name="is_distribution_key" label="分布键">
+              <Select options={YES_NO} allowClear style={{ width: 80 }} />
+            </Form.Item>
+            <Form.Item name="is_partition_key" label="分区键">
+              <Select options={YES_NO} allowClear style={{ width: 80 }} />
+            </Form.Item>
+          </Space>
+          <Space style={{ display: "flex" }} align="start">
+            <Form.Item name="default_value" label="缺省值" style={{ flex: 1 }}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="downstream_job_count" label="下游作业数">
+              <InputNumber style={{ width: 120 }} />
+            </Form.Item>
+          </Space>
+          <Form.Item name="code_info" label="代码信息">
             <Input.TextArea rows={2} />
           </Form.Item>
         </Form>

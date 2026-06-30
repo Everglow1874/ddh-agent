@@ -26,6 +26,25 @@ public class DatabaseMigration {
                 "ALTER TABLE etl_jobs ADD COLUMN plan_content TEXT AFTER plan_md_path");
             addColumnIfMissing(meta, conn, "etl_steps", "sql_content",
                 "ALTER TABLE etl_steps ADD COLUMN sql_content TEXT AFTER sql_file_path");
+            // table_columns 扩展 13 列标准模板字段
+            addColumnIfMissing(meta, conn, "table_columns", "col_length",
+                "ALTER TABLE table_columns ADD COLUMN col_length INT");
+            addColumnIfMissing(meta, conn, "table_columns", "col_precision",
+                "ALTER TABLE table_columns ADD COLUMN col_precision INT");
+            addColumnIfMissing(meta, conn, "table_columns", "is_distribution_key",
+                "ALTER TABLE table_columns ADD COLUMN is_distribution_key SMALLINT DEFAULT 0");
+            addColumnIfMissing(meta, conn, "table_columns", "is_partition_key",
+                "ALTER TABLE table_columns ADD COLUMN is_partition_key SMALLINT DEFAULT 0");
+            addColumnIfMissing(meta, conn, "table_columns", "is_primary_key",
+                "ALTER TABLE table_columns ADD COLUMN is_primary_key SMALLINT DEFAULT 0");
+            addColumnIfMissing(meta, conn, "table_columns", "is_nullable",
+                "ALTER TABLE table_columns ADD COLUMN is_nullable SMALLINT DEFAULT 1");
+            addColumnIfMissing(meta, conn, "table_columns", "code_info",
+                "ALTER TABLE table_columns ADD COLUMN code_info VARCHAR(512)");
+            addColumnIfMissing(meta, conn, "table_columns", "default_value",
+                "ALTER TABLE table_columns ADD COLUMN default_value VARCHAR(255)");
+            addColumnIfMissing(meta, conn, "table_columns", "downstream_job_count",
+                "ALTER TABLE table_columns ADD COLUMN downstream_job_count INT");
         } catch (Exception e) {
             log.warn("Database migration failed, skipping: {}", e.getMessage());
         }

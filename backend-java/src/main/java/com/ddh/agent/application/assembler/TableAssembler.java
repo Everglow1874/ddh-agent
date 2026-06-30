@@ -39,6 +39,15 @@ public class TableAssembler {
         r.setDataType(c.getDataType());
         r.setComment(c.getComment());
         r.setSortOrder(c.getSortOrder());
+        r.setColLength(c.getColLength());
+        r.setColPrecision(c.getColPrecision());
+        r.setIsDistributionKey(c.getIsDistributionKey());
+        r.setIsPartitionKey(c.getIsPartitionKey());
+        r.setIsPrimaryKey(c.getIsPrimaryKey());
+        r.setIsNullable(c.getIsNullable());
+        r.setCodeInfo(c.getCodeInfo());
+        r.setDefaultValue(c.getDefaultValue());
+        r.setDownstreamJobCount(c.getDownstreamJobCount());
         return r;
     }
 

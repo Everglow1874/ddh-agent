@@ -41,8 +41,17 @@ CREATE TABLE IF NOT EXISTS table_columns (
     table_id    BIGINT NOT NULL                                COMMENT '所属源表ID',
     column_name VARCHAR(128) NOT NULL                          COMMENT '列名',
     data_type   VARCHAR(64)  NOT NULL                          COMMENT '数据类型',
-    comment     TEXT                                           COMMENT '列备注',
-    sort_order  INT DEFAULT 0                                  COMMENT '排序序号'
+    comment     TEXT                                           COMMENT '列备注/字段中文名',
+    sort_order  INT DEFAULT 0                                  COMMENT '排序序号/字段序号',
+    col_length           INT                                   COMMENT '字段长度',
+    col_precision        INT                                   COMMENT '字段精度',
+    is_distribution_key  SMALLINT DEFAULT 0                     COMMENT '是否分布键 0/1',
+    is_partition_key     SMALLINT DEFAULT 0                     COMMENT '是否分区键 0/1',
+    is_primary_key       SMALLINT DEFAULT 0                     COMMENT '是否主键 0/1',
+    is_nullable          SMALLINT DEFAULT 1                     COMMENT '是否可为空 0/1',
+    code_info            VARCHAR(512)                           COMMENT '代码信息',
+    default_value        VARCHAR(255)                           COMMENT '缺省值',
+    downstream_job_count INT                                   COMMENT '下游作业数'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='源表字段定义表';
 
 CREATE TABLE IF NOT EXISTS conversations (

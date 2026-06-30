@@ -40,10 +40,32 @@ export async function deleteTable(id: number): Promise<void> {
   await client.delete(`/tables/${id}`);
 }
 
+export async function downloadTemplate(format: "xlsx" | "csv"): Promise<void> {
+  const resp = await client.get(`/tables/template`, {
+    params: { format },
+    responseType: "blob",
+  });
+  const url = URL.createObjectURL(resp.data as Blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `表字段导入模板.${format}`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export interface ColumnRequest {
   column_name: string;
   data_type: string;
   comment?: string;
+  col_length?: number | null;
+  col_precision?: number | null;
+  is_distribution_key?: number | null;
+  is_partition_key?: number | null;
+  is_primary_key?: number | null;
+  is_nullable?: number | null;
+  code_info?: string | null;
+  default_value?: string | null;
+  downstream_job_count?: number | null;
 }
 
 export async function addColumn(tableId: number, data: ColumnRequest): Promise<TableColumn> {
