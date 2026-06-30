@@ -47,6 +47,9 @@ class RelationControllerTest {
         token = "Bearer " + jwtUtil.generateToken(user.getId());
     }
 
+    private static final String HEADER =
+        "字段序号,字段名称,字段中文名,字段类型,字段长度,字段精度,是否分布键,是否分区建,是否主键,是否可为空,代码信息,缺省值,下游作业数\n";
+
     private Long importTable(String filename, String csv) throws Exception {
         MockMultipartFile file = new MockMultipartFile(
             "file", filename, "text/csv", csv.getBytes(StandardCharsets.UTF_8));
@@ -71,9 +74,9 @@ class RelationControllerTest {
     @Test
     void crudListAndGraph() throws Exception {
         Long orders = importTable("orders.csv",
-            "column_name,data_type,comment\nuser_id,BIGINT,用户ID\namount,DECIMAL,金额\n");
+            HEADER + "1,user_id,用户ID,BIGINT\n2,amount,金额,DECIMAL\n");
         Long users = importTable("users.csv",
-            "column_name,data_type,comment\nid,BIGINT,主键\nname,VARCHAR,姓名\n");
+            HEADER + "1,id,主键,BIGINT\n2,name,姓名,VARCHAR\n");
         long ordersUserId = columnId(orders, "user_id");
         long usersId = columnId(users, "id");
 
@@ -122,8 +125,8 @@ class RelationControllerTest {
 
     @Test
     void createWithColumnNotInTable_returns400() throws Exception {
-        Long orders = importTable("o2.csv", "column_name,data_type\nuser_id,BIGINT\n");
-        Long users = importTable("u2.csv", "column_name,data_type\nid,BIGINT\n");
+        Long orders = importTable("o2.csv", HEADER + "1,user_id,,BIGINT\n");
+        Long users = importTable("u2.csv", HEADER + "1,id,,BIGINT\n");
 
         String payload = "{"
             + "\"source_table_id\":" + orders + ","

@@ -173,8 +173,14 @@ public class AgentDomainService {
                 List<Map<String, Object>> colList = cols.stream().map(c -> {
                     Map<String, Object> cm = new HashMap<>();
                     cm.put("column_name", c.getColumnName());
-                    cm.put("data_type", c.getDataType());
+                    cm.put("data_type", formatDataType(c));
                     cm.put("comment", c.getComment());
+                    if (isOne(c.getIsPrimaryKey())) cm.put("primary_key", true);
+                    cm.put("nullable", !isOne(c.getIsNullable()) ? false : true);
+                    if (c.getDefaultValue() != null && !c.getDefaultValue().isEmpty())
+                        cm.put("default", c.getDefaultValue());
+                    if (isOne(c.getIsDistributionKey())) cm.put("distribution_key", true);
+                    if (isOne(c.getIsPartitionKey())) cm.put("partition_key", true);
                     return cm;
                 }).collect(Collectors.toList());
                 Map<String, Object> result = new HashMap<>();
@@ -324,6 +330,22 @@ public class AgentDomainService {
         p.put("type", "object");
         p.put("properties", new LinkedHashMap<>());
         return p;
+    }
+
+    private static boolean isOne(Integer v) {
+        return v != null && v == 1;
+    }
+
+    /** 把类型与长度/精度拼成 TYPE(len) / TYPE(len,prec)，辅助 AI 生成准确 DDL */
+    private static String formatDataType(TableColumn c) {
+        String type = c.getDataType() == null ? "" : c.getDataType();
+        if (c.getColLength() != null) {
+            if (c.getColPrecision() != null) {
+                return type + "(" + c.getColLength() + "," + c.getColPrecision() + ")";
+            }
+            return type + "(" + c.getColLength() + ")";
+        }
+        return type;
     }
 
     private static Map<String, Object> paramsSingle(String name, String type, String desc) {

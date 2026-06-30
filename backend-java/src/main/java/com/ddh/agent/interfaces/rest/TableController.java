@@ -7,11 +7,15 @@ import com.ddh.agent.interfaces.dto.request.ColumnUpdateRequest;
 import com.ddh.agent.interfaces.dto.request.TableUpdateRequest;
 import com.ddh.agent.interfaces.dto.response.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 
 @RestController
@@ -27,7 +31,31 @@ public class TableController {
                                      @RequestParam(value = "description", required = false) String description,
                                      Authentication auth) {
         Long userId = Long.valueOf(auth.getName());
-        return tableAppService.importCsv(file, scope, description, userId);
+        return tableAppService.importTable(file, scope, description, userId);
+    }
+
+    /** 下载导入模板：format=xlsx|csv（默认 xlsx） */
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadTemplate(
+            @RequestParam(defaultValue = "xlsx") String format) {
+        boolean csv = "csv".equalsIgnoreCase(format);
+        byte[] body = tableAppService.buildTemplate(csv ? "csv" : "xlsx");
+        String filename = "表字段导入模板." + (csv ? "csv" : "xlsx");
+        String encoded;
+        try {
+            encoded = URLEncoder.encode(filename, "UTF-8").replace("+", "%20");
+        } catch (UnsupportedEncodingException e) {
+            encoded = csv ? "table_template.csv" : "table_template.xlsx";
+        }
+        MediaType type = csv
+            ? new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8)
+            : MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename*=UTF-8''" + encoded)
+            .contentType(type)
+            .body(body);
     }
 
     @GetMapping

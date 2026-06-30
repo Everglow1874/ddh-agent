@@ -22,20 +22,17 @@ public class TableAppService {
 
     @Autowired private SourceTableRepository sourceTableRepository;
     @Autowired private TableAssembler assembler;
+    @Autowired private TableImportParser importParser;
 
-    public TableResponse importCsv(MultipartFile file, Integer scope,
-                                   String description, Long currentUserId) {
+    /** 导入表：支持 13 列标准模板的 .xlsx / .xls / .csv */
+    public TableResponse importTable(MultipartFile file, Integer scope,
+                                     String description, Long currentUserId) {
         String filename = file.getOriginalFilename() != null
-            ? file.getOriginalFilename() : "unknown.csv";
+            ? file.getOriginalFilename() : "unknown";
         String tableName = filename.contains(".")
             ? filename.substring(0, filename.lastIndexOf('.')) : filename;
 
-        List<TableColumn> columns;
-        try {
-            columns = parseCsv(file.getInputStream());
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to read file");
-        }
+        List<TableColumn> columns = importParser.parse(file);
 
         SourceTable table = new SourceTable();
         table.setName(tableName);
@@ -45,48 +42,16 @@ public class TableAppService {
         table.setCreatedAt(LocalDateTime.now());
         sourceTableRepository.save(table);
 
-        int i = 0;
         for (TableColumn col : columns) {
             col.setTableId(table.getId());
-            col.setSortOrder(i++);
         }
         sourceTableRepository.saveColumns(columns);
         return assembler.toResponse(table);
     }
 
-    /** CSV 需含 column_name、data_type 列，comment 可选 */
-    private List<TableColumn> parseCsv(InputStream is) throws IOException {
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(is, "UTF-8"))) {
-            String headerLine = reader.readLine();
-            if (headerLine == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "CSV file is empty");
-            }
-            List<String> headers = Arrays.stream(headerLine.split(","))
-                .map(String::trim).collect(Collectors.toList());
-            int colNameIdx = headers.indexOf("column_name");
-            int dataTypeIdx = headers.indexOf("data_type");
-            int commentIdx = headers.indexOf("comment");
-            if (colNameIdx < 0 || dataTypeIdx < 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "CSV missing required columns: column_name, data_type");
-            }
-            List<TableColumn> result = new ArrayList<>();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) continue;
-                String[] parts = line.split(",", -1);
-                TableColumn col = new TableColumn();
-                col.setColumnName(parts[colNameIdx].trim());
-                col.setDataType(parts[dataTypeIdx].trim());
-                if (commentIdx >= 0 && commentIdx < parts.length) {
-                    String c = parts[commentIdx].trim();
-                    col.setComment(c.isEmpty() ? null : c);
-                }
-                result.add(col);
-            }
-            return result;
-        }
+    /** 生成导入模板（xlsx / csv） */
+    public byte[] buildTemplate(String format) {
+        return importParser.buildTemplate(format);
     }
 
     public List<TableResponse> listTables(String scope, Long currentUserId) {
@@ -137,6 +102,15 @@ public class TableAppService {
         col.setDataType(req.getDataType());
         col.setComment(req.getComment());
         col.setSortOrder(nextOrder);
+        col.setColLength(req.getColLength());
+        col.setColPrecision(req.getColPrecision());
+        col.setIsDistributionKey(req.getIsDistributionKey());
+        col.setIsPartitionKey(req.getIsPartitionKey());
+        col.setIsPrimaryKey(req.getIsPrimaryKey());
+        col.setIsNullable(req.getIsNullable());
+        col.setCodeInfo(req.getCodeInfo());
+        col.setDefaultValue(req.getDefaultValue());
+        col.setDownstreamJobCount(req.getDownstreamJobCount());
         sourceTableRepository.saveColumn(col);
     }
 
@@ -152,6 +126,15 @@ public class TableAppService {
         if (req.getDataType() != null) col.setDataType(req.getDataType());
         if (req.getComment() != null) col.setComment(req.getComment());
         if (req.getSortOrder() != null) col.setSortOrder(req.getSortOrder());
+        if (req.getColLength() != null) col.setColLength(req.getColLength());
+        if (req.getColPrecision() != null) col.setColPrecision(req.getColPrecision());
+        if (req.getIsDistributionKey() != null) col.setIsDistributionKey(req.getIsDistributionKey());
+        if (req.getIsPartitionKey() != null) col.setIsPartitionKey(req.getIsPartitionKey());
+        if (req.getIsPrimaryKey() != null) col.setIsPrimaryKey(req.getIsPrimaryKey());
+        if (req.getIsNullable() != null) col.setIsNullable(req.getIsNullable());
+        if (req.getCodeInfo() != null) col.setCodeInfo(req.getCodeInfo());
+        if (req.getDefaultValue() != null) col.setDefaultValue(req.getDefaultValue());
+        if (req.getDownstreamJobCount() != null) col.setDownstreamJobCount(req.getDownstreamJobCount());
         sourceTableRepository.updateColumn(col);
     }
 

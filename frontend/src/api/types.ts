@@ -17,6 +17,15 @@ export interface TableColumn {
   data_type: string;
   comment: string | null;
   sort_order: number;
+  col_length: number | null;
+  col_precision: number | null;
+  is_distribution_key: number | null;
+  is_partition_key: number | null;
+  is_primary_key: number | null;
+  is_nullable: number | null;
+  code_info: string | null;
+  default_value: string | null;
+  downstream_job_count: number | null;
 }
 
 export interface SourceTable {
